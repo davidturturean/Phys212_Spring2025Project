@@ -1,0 +1,1058 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb, amsfonts}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{physics}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={PHYS 212 Project - Phase 3 and 4 Plan},
+    pdfpagemode=FullScreen,
+}
+
+\title{PHYS 212 Final Project\\
+\Large Detailed Plan for Phase 3 and Phase 4}
+\author{Daria Teodora Harabor \& David Turturean}
+\date{Spring 2025}
+
+\begin{document}
+
+\maketitle
+
+\section{Background and Current Progress}
+
+\subsection{Project Overview}
+We are developing a Bayesian inference pipeline to constrain the six parameters of the $\Lambda$CDM cosmological model using the Planck CMB temperature power spectrum. So far, we have completed:
+
+\begin{itemize}
+    \item \textbf{Phase 1:} Extraction of the CMB power spectrum from Planck FITS data and visualization of acoustic peaks.
+    \item \textbf{Phase 2:} Implementation of a physically-motivated $\Lambda$CDM model and MCMC framework with appropriate priors.
+\end{itemize}
+
+\subsection{Completed Components}
+The following components have been successfully implemented:
+
+\begin{enumerate}
+    \item \textbf{Data extraction:} Direct extraction of the CMB TT power spectrum from Planck FITS maps using the \texttt{data\_loader.py} module. This ensures we are working with actual observational data throughout.
+    
+    \item \textbf{Theoretical model:} A state-of-the-art $\Lambda$CDM model implemented in \texttt{theoretical\_lcdm.py} with:
+    \begin{itemize}
+        \item Accurate acoustic oscillations at the correct multipole moments
+        \item Silk damping at high $\ell$
+        \item Proper Sachs-Wolfe plateau at low $\ell$
+        \item Baryon loading effects on peak heights
+        \item Realistic parameter dependencies
+    \end{itemize}
+    
+    \item \textbf{Likelihood function:} Comparison between model and data using a proper $\chi^2$ statistic in \texttt{likelihood.py}.
+    
+    \item \textbf{MCMC implementation:} Metropolis-Hastings algorithm with:
+    \begin{itemize}
+        \item Multiple chains with different starting points
+        \item 20\% burn-in capability
+        \item Gelman-Rubin convergence diagnostics
+        \item Checkpoint capabilities for long runs
+        \item Comprehensive logging
+    \end{itemize}
+    
+    \item \textbf{Visualization:} Publication-quality figures showing the CMB power spectrum and model comparisons, saved in the \texttt{output/} directory.
+\end{enumerate}
+
+\section{Phase 3: Parameter Constraints and Analysis}
+
+Phase 3 involves running the MCMC sampler we've implemented to constrain cosmological parameters, analyzing convergence, and interpreting the results.
+
+\subsection{Tasks for Phase 3}
+
+\subsubsection{Task 3.1: MCMC Parameter Exploration}
+
+\textbf{Objective:} Run the MCMC sampler to explore the parameter space of the $\Lambda$CDM model.
+
+\textbf{Precise Step-by-Step Instructions:}
+
+\begin{enumerate}
+    \item \textbf{Verify data availability:} Ensure \texttt{COM\_CMB\_IQU-smica\_2048\_R3.00\_full.fits} is in the project root directory.
+    
+    \item \textbf{Run the production MCMC script:}
+    \begin{lstlisting}[basicstyle=\small\ttfamily]
+    # Navigate to project directory
+    cd /path/to/PHYS212/FinalProject
+    
+    # Execute the production MCMC script
+    python3 run_mcmc_production.py
+    \end{lstlisting}
+    
+    \item \textbf{Monitor progress:} The script will create a timestamped log file in the \texttt{mcmc\_results/} directory. You can monitor progress by viewing this file:
+    \begin{lstlisting}[basicstyle=\small\ttfamily]
+    # View log in real-time
+    tail -f mcmc_results/mcmc_production_YYYYMMDD_HHMMSS.log
+    \end{lstlisting}
+    
+    \item \textbf{Expected runtime:} The full MCMC run (4 chains × 30,000 steps) will take approximately 8-12 hours depending on your hardware. Checkpoints will be saved regularly to the \texttt{mcmc\_results/} directory.
+    
+    \item \textbf{Expected outputs:}
+    \begin{itemize}
+        \item \texttt{mcmc\_results/chains\_lambdaCDM.npy} - Raw chain data
+        \item \texttt{mcmc\_results/chain\_\{1-4\}\_full.npz} - Individual chain files
+        \item \texttt{mcmc\_results/chain\_\{1-4\}\_checkpoint\_\{step\}.npz} - Checkpoint files
+        \item \texttt{mcmc\_results/mcmc\_production\_YYYYMMDD\_HHMMSS.log} - Detailed log file
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{Task 3.2: Convergence Diagnostics}
+
+\textbf{Objective:} Assess the convergence of the MCMC chains to ensure reliable parameter constraints.
+
+\textbf{Precise Step-by-Step Instructions:}
+
+\begin{enumerate}
+    \item \textbf{Examine generated diagnostics:} The \texttt{run\_mcmc\_production.py} script automatically runs diagnostics. Review these outputs first:
+    \begin{itemize}
+        \item \texttt{mcmc\_results/trace\_plots.png} - Visual trace plot showing convergence
+        \item \texttt{mcmc\_results/README.md} - Contains Gelman-Rubin statistics table
+    \end{itemize}
+    
+    \item \textbf{Verify convergence criteria:} Check that Gelman-Rubin R-hat values are below 1.1 for all parameters, indicating good convergence. If any values are above 1.1, the chains may need to run longer.
+    
+    \item \textbf{Create additional diagnostic plots} (if needed):
+    \begin{lstlisting}[basicstyle=\small\ttfamily]
+    # Create a Python script to generate additional diagnostics
+    cat > run_diagnostics.py << 'EOF'
+import numpy as np
+import matplotlib.pyplot as plt
+from analysis import gelman_rubin, plot_trace
+import os
+
+# Load the chains
+chains = np.load("mcmc_results/chains_lambdaCDM.npy")
+# Trim burn-in (20%)
+burn_in = int(chains.shape[1] * 0.2)
+trimmed_chains = chains[:, burn_in:, :]
+
+# Calculate Gelman-Rubin statistic
+r_hat = gelman_rubin(trimmed_chains)
+print("Gelman-Rubin R-hat values:")
+param_names = ["H0", "Omega_b_h2", "Omega_c_h2", "n_s", "A_s", "tau"]
+for i, name in enumerate(param_names):
+    print(f"{name}: {r_hat[i]:.3f} (Converged: {'Yes' if r_hat[i] < 1.1 else 'No'})")
+
+# Calculate running R-hat (every 1000 steps)
+step_size = 1000
+steps = np.arange(step_size, chains.shape[1], step_size)
+running_r_hat = np.zeros((len(steps), chains.shape[2]))
+
+for i, step in enumerate(steps):
+    running_r_hat[i] = gelman_rubin(chains[:, :step, :])
+
+# Plot running R-hat
+plt.figure(figsize=(10, 6))
+for i, name in enumerate(param_names):
+    plt.plot(steps, running_r_hat[:, i], '-o', label=name)
+plt.axhline(1.1, ls='--', color='k', alpha=0.3)
+plt.xlabel("MCMC Step")
+plt.ylabel("Gelman-Rubin R-hat")
+plt.title("Convergence Diagnostics: Running R-hat")
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.savefig("mcmc_results/running_r_hat.png", dpi=300)
+plt.close()
+
+# Plot autocorrelation
+def autocorrelation(chain, max_lag=100):
+    """Calculate autocorrelation for a parameter chain."""
+    mean = np.mean(chain)
+    var = np.var(chain)
+    chain_norm = chain - mean
+    acorr = np.correlate(chain_norm, chain_norm, mode='full')
+    acorr = acorr[len(chain_norm)-1:] / (var * np.arange(len(chain_norm), 0, -1))
+    return acorr[:max_lag]
+
+plt.figure(figsize=(10, 6))
+for i, name in enumerate(param_names):
+    # Use first chain after burn-in
+    chain = trimmed_chains[0, :, i]
+    ac = autocorrelation(chain)
+    plt.plot(ac, label=name)
+plt.xlabel("Lag")
+plt.ylabel("Autocorrelation")
+plt.title("Parameter Autocorrelation")
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.savefig("mcmc_results/autocorrelation.png", dpi=300)
+
+print("Additional diagnostics saved to mcmc_results/")
+EOF
+
+    # Run the diagnostic script
+    python3 run_diagnostics.py
+    \end{lstlisting}
+    
+    \item \textbf{Examine autocorrelation:} The autocorrelation plots show how quickly chains "forget" their previous values. High autocorrelation indicates slow mixing and may require thinning the chains.
+    
+    \item \textbf{Calculate effective sample size:} If autocorrelation is high, estimate the effective sample size:
+    \begin{lstlisting}[basicstyle=\small\ttfamily]
+    # Add to the diagnostic script
+    def effective_sample_size(chain):
+        """Estimate effective sample size accounting for autocorrelation."""
+        n = len(chain)
+        if n <= 1:
+            return 0
+            
+        # Calculate autocorrelation
+        acorr = autocorrelation(chain, min(n//4, 1000))
+        
+        # Find where autocorrelation becomes negative or near zero
+        cutoff = np.where(acorr < 0.05)[0]
+        max_t = len(acorr) if len(cutoff) == 0 else cutoff[0]
+        
+        # Integrated autocorrelation time
+        tau = 1 + 2 * np.sum(acorr[1:max_t])
+        
+        # Effective sample size
+        n_eff = n / tau
+        return n_eff
+    
+    # Calculate for each parameter
+    for i, name in enumerate(param_names):
+        combined_chain = trimmed_chains[:, :, i].flatten()
+        ess = effective_sample_size(combined_chain)
+        print(f"{name}: Effective sample size = {ess:.0f}")
+    \end{lstlisting}
+\end{enumerate}
+
+\subsubsection{Task 3.3: Parameter Constraints}
+
+\textbf{Objective:} Derive precise constraints on the six $\Lambda$CDM parameters from the MCMC chains.
+
+\textbf{Precise Step-by-Step Instructions:}
+
+\begin{enumerate}
+    \item \textbf{Examine generated constraints:} The \texttt{run\_mcmc\_production.py} script automatically calculates parameter constraints. Review these outputs first:
+    \begin{itemize}
+        \item \texttt{mcmc\_results/corner\_plot.png} - Corner plot showing parameter distributions and correlations
+        \item \texttt{mcmc\_results/parameter\_constraints.csv} - Table of parameter statistics
+        \item \texttt{mcmc\_results/README.md} - Summary of parameter constraints
+    \end{itemize}
+    
+    \item \textbf{Generate additional constraint visualizations:}
+    \begin{lstlisting}[basicstyle=\small\ttfamily]
+    # Create a script for advanced constraint visualization
+    cat > visualize_constraints.py << 'EOF'
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import os
+import corner
+
+# Create output directory for constraint visualizations
+os.makedirs("mcmc_results/constraints", exist_ok=True)
+
+# Load the posterior samples (after burn-in)
+posterior_samples = np.load("mcmc_results/posterior_samples_lambdaCDM.npy")
+param_names = ["H0", "Omega_b_h2", "Omega_c_h2", "n_s", "A_s", "tau"]
+
+# Planck 2018 values for comparison
+planck_values = {
+    "H0": (67.36, 0.54),
+    "Omega_b_h2": (0.02237, 0.00015),
+    "Omega_c_h2": (0.1200, 0.0012),
+    "n_s": (0.9649, 0.0042),
+    "A_s": (2.1e-9, 0.03e-9),
+    "tau": (0.0544, 0.0073)
+}
+
+# Generate individual posterior plots with Planck comparison
+for i, param in enumerate(param_names):
+    samples = posterior_samples[:, i]
+    planck_val, planck_err = planck_values[param]
+    
+    # Create histogram
+    plt.figure(figsize=(8, 5))
+    n, bins, patches = plt.hist(samples, bins=50, density=True, alpha=0.7, 
+                               color='blue', label='Our constraint')
+    
+    # Add Planck value
+    plt.axvline(planck_val, color='red', linestyle='-', linewidth=2, 
+               label=f'Planck 2018: {planck_val:.6g}±{planck_err:.6g}')
+    
+    # Add shaded 1σ region for Planck
+    plt.axvspan(planck_val-planck_err, planck_val+planck_err, 
+               alpha=0.2, color='red')
+    
+    # Calculate our constraints
+    median = np.percentile(samples, 50)
+    lower = np.percentile(samples, 16)
+    upper = np.percentile(samples, 84)
+    
+    # Add our constraints
+    plt.axvline(median, color='blue', linestyle='-', linewidth=2)
+    plt.axvspan(lower, upper, alpha=0.2, color='blue')
+    
+    # Add text for our constraint
+    plt.text(0.05, 0.95, f'Our constraint: {median:.6g}$^{{+{upper-median:.6g}}}_{{{lower-median:.6g}}}$',
+            transform=plt.gca().transAxes, fontsize=12,
+            bbox=dict(facecolor='white', alpha=0.8))
+    
+    # Formatting
+    plt.xlabel(param)
+    plt.ylabel('Probability density')
+    plt.title(f'Posterior distribution: {param}')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    
+    # Save figure
+    plt.savefig(f"mcmc_results/constraints/{param}_posterior.png", dpi=300)
+    plt.close()
+
+# Calculate parameter correlations
+corr_matrix = np.corrcoef(posterior_samples.T)
+
+# Plot correlation matrix
+plt.figure(figsize=(8, 7))
+im = plt.imshow(corr_matrix, cmap='coolwarm', vmin=-1, vmax=1)
+plt.colorbar(im, label='Correlation coefficient')
+
+# Add correlation values
+for i in range(len(param_names)):
+    for j in range(len(param_names)):
+        plt.text(j, i, f'{corr_matrix[i, j]:.2f}', 
+                ha='center', va='center', color='black')
+
+plt.xticks(np.arange(len(param_names)), param_names, rotation=45)
+plt.yticks(np.arange(len(param_names)), param_names)
+plt.title('Parameter Correlation Matrix')
+plt.tight_layout()
+plt.savefig("mcmc_results/constraints/correlation_matrix.png", dpi=300)
+plt.close()
+
+# Create 2D posterior plots for strongly correlated parameters
+# Find top 3 strongest correlations
+corr_abs = np.abs(corr_matrix - np.identity(len(param_names)))
+pairs = []
+for _ in range(3):
+    i, j = np.unravel_index(np.argmax(corr_abs), corr_abs.shape)
+    if i != j:  # Avoid diagonal
+        pairs.append((i, j))
+        corr_abs[i, j] = 0  # Zero out to find next highest
+        
+for i, j in pairs:
+    # Create 2D plot for this parameter pair
+    plt.figure(figsize=(8, 7))
+    param_i, param_j = param_names[i], param_names[j]
+    
+    # Extract samples for these parameters
+    x = posterior_samples[:, i]
+    y = posterior_samples[:, j]
+    
+    # Create 2D histogram
+    plt.hist2d(x, y, bins=50, cmap='Blues')
+    
+    # Add Planck values
+    planck_i, planck_err_i = planck_values[param_i]
+    planck_j, planck_err_j = planck_values[param_j]
+    plt.errorbar(planck_i, planck_j, xerr=planck_err_i, yerr=planck_err_j,
+                marker='o', color='red', label='Planck 2018')
+    
+    # Add correlation coefficient
+    plt.text(0.05, 0.95, f'Correlation: {corr_matrix[i, j]:.3f}',
+            transform=plt.gca().transAxes, fontsize=12,
+            bbox=dict(facecolor='white', alpha=0.8))
+    
+    # Formatting
+    plt.xlabel(param_i)
+    plt.ylabel(param_j)
+    plt.title(f'Joint Posterior: {param_i} vs {param_j}')
+    plt.legend()
+    plt.tight_layout()
+    
+    # Save figure
+    plt.savefig(f"mcmc_results/constraints/{param_i}_{param_j}_joint.png", dpi=300)
+    plt.close()
+
+print("Parameter constraint visualizations saved to mcmc_results/constraints/")
+EOF
+
+    # Run the visualization script
+    python3 visualize_constraints.py
+    \end{lstlisting}
+    
+    \item \textbf{Create publication-ready table:} Generate a LaTeX table of parameter constraints for the scientific report:
+    \begin{lstlisting}[basicstyle=\small\ttfamily]
+    # Create a script to generate LaTeX table
+    cat > generate_latex_table.py << 'EOF'
+import numpy as np
+import pandas as pd
+
+# Load constraints from CSV
+df = pd.read_csv("mcmc_results/parameter_constraints.csv")
+
+# Create LaTeX table
+latex_table = "\\begin{table}[h]\n\\centering\n"
+latex_table += "\\begin{tabular}{lccc}\n"
+latex_table += "\\toprule\n"
+latex_table += "Parameter & Our constraint & Planck 2018 & Difference ($\\sigma$) \\\\\n"
+latex_table += "\\midrule\n"
+
+# Add each parameter
+for _, row in df.iterrows():
+    param = row['parameter']
+    median = row['median']
+    lower = row['median'] - row['lower_68']
+    upper = row['upper_68'] - row['median']
+    fiducial = row['fiducial']
+    offset = row['offset_pct']
+    
+    # Format the constraint with asymmetric errors
+    constraint = f"${median:.6g}^{{+{upper:.6g}}}_{{-{lower:.6g}}}$"
+    
+    # Format the Planck value
+    if param == "H0":
+        planck = "$67.36 \\pm 0.54$"
+    elif param == "Omega_b_h2":
+        planck = "$0.02237 \\pm 0.00015$"
+    elif param == "Omega_c_h2":
+        planck = "$0.1200 \\pm 0.0012$"
+    elif param == "n_s":
+        planck = "$0.9649 \\pm 0.0042$"
+    elif param == "A_s":
+        planck = "$2.1 \\times 10^{-9} \\pm 0.03 \\times 10^{-9}$"
+    elif param == "tau":
+        planck = "$0.0544 \\pm 0.0073$"
+    else:
+        planck = "—"
+    
+    # Calculate significance of difference
+    if abs(offset) < 0.01:
+        diff = "$<0.1$"
+    else:
+        diff = f"${abs(offset/100):.1f}$"
+    
+    # Add row
+    latex_table += f"{param} & {constraint} & {planck} & {diff} \\\\\n"
+
+latex_table += "\\bottomrule\n"
+latex_table += "\\end{tabular}\n"
+latex_table += "\\caption{Comparison of our $\\Lambda$CDM parameter constraints with Planck 2018 values.}\n"
+latex_table += "\\label{tab:constraints}\n"
+latex_table += "\\end{table}"
+
+# Save to file
+with open("mcmc_results/constraints_table.tex", "w") as f:
+    f.write(latex_table)
+
+print("LaTeX table saved to mcmc_results/constraints_table.tex")
+EOF
+
+    # Run the script
+    python3 generate_latex_table.py
+    \end{lstlisting}
+\end{enumerate}
+
+\subsubsection{Task 3.4: Results Interpretation}
+
+\textbf{Objective:} Interpret the MCMC results in the context of cosmological physics and compare with published Planck results.
+
+\textbf{Precise Step-by-Step Instructions:}
+
+\begin{enumerate}
+    \item \textbf{Compare parameter values with Planck:}
+    \begin{lstlisting}[basicstyle=\small\ttfamily]
+    # Create a script to perform detailed comparison
+    cat > compare_with_planck.py << 'EOF'
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Load our constraints
+df = pd.read_csv("mcmc_results/parameter_constraints.csv")
+
+# Planck 2018 values (TT,TE,EE+lowE)
+planck_values = {
+    "H0": (67.36, 0.54),           # Value, error
+    "Omega_b_h2": (0.02237, 0.00015),
+    "Omega_c_h2": (0.1200, 0.0012),
+    "n_s": (0.9649, 0.0042),
+    "A_s": (2.1e-9, 0.03e-9),
+    "tau": (0.0544, 0.0073)
+}
+
+# Calculate differences in sigma units
+differences = {}
+for _, row in df.iterrows():
+    param = row['parameter']
+    if param in planck_values:
+        our_val = row['median']
+        our_err = (row['upper_68'] - row['lower_68']) / 2  # Approximate symmetric error
+        planck_val, planck_err = planck_values[param]
+        
+        # Difference in sigma
+        sigma_diff = (our_val - planck_val) / np.sqrt(our_err**2 + planck_err**2)
+        differences[param] = sigma_diff
+
+# Print comparison
+print("Parameter differences with Planck (in sigma units):")
+for param, diff in differences.items():
+    print(f"{param}: {diff:.2f} sigma")
+
+# Plot comparison
+plt.figure(figsize=(10, 6))
+params = list(differences.keys())
+diffs = [differences[p] for p in params]
+
+plt.bar(params, diffs, color='skyblue')
+plt.axhline(y=0, color='k', linestyle='-', alpha=0.3)
+plt.axhline(y=1, color='r', linestyle='--', alpha=0.5)
+plt.axhline(y=-1, color='r', linestyle='--', alpha=0.5)
+plt.axhline(y=2, color='r', linestyle=':', alpha=0.5)
+plt.axhline(y=-2, color='r', linestyle=':', alpha=0.5)
+
+plt.xlabel('Parameter')
+plt.ylabel('Difference (sigma)')
+plt.title('Comparison with Planck 2018 Values')
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.savefig("mcmc_results/planck_comparison.png", dpi=300)
+
+# Generate interpretation text
+print("\nGenerating interpretation text...")
+
+interpretation = """
+# Interpretation of ΛCDM Parameter Constraints
+
+## Comparison with Planck 2018 Values
+
+"""
+
+# Add general comment on agreement
+max_diff = max([abs(d) for d in diffs])
+if max_diff < 1.0:
+    interpretation += "Our parameter constraints show excellent agreement with Planck 2018 values, with all parameters within 1σ of the published values. "
+elif max_diff < 2.0:
+    interpretation += "Our parameter constraints show good agreement with Planck 2018 values, with all parameters within 2σ of the published values. "
+else:
+    interpretation += f"Some parameters show deviations from Planck 2018 values, with the largest being {max_diff:.1f}σ. "
+
+interpretation += "The level of agreement is remarkable considering we are using only TT power spectrum data while Planck used a combination of TT, TE, and EE spectra plus low-ℓ polarization.\n\n"
+
+interpretation += "## Parameter-Specific Interpretation\n\n"
+
+# Load correlation matrix for interpretation
+posterior_samples = np.load("mcmc_results/posterior_samples_lambdaCDM.npy")
+corr_matrix = np.corrcoef(posterior_samples.T)
+
+# Add interpretation for each parameter
+for i, param in enumerate(params):
+    our_value = df[df['parameter'] == param]['median'].values[0]
+    planck_val, planck_err = planck_values[param]
+    
+    interpretation += f"### {param}\n\n"
+    
+    # Parameter-specific interpretation
+    if param == "H0":
+        interpretation += f"Our constraint on the Hubble constant is {our_value:.2f} km/s/Mpc, which "
+        if abs(differences[param]) < 1.0:
+            interpretation += f"agrees well with the Planck value of {planck_val:.2f} km/s/Mpc. "
+        else:
+            interpretation += f"differs from the Planck value of {planck_val:.2f} km/s/Mpc by {differences[param]:.2f}σ. "
+        
+        # Check correlation with other parameters
+        correlations = [(np.abs(corr_matrix[i, j]), params[j]) for j in range(len(params)) if i != j]
+        correlations.sort(reverse=True)
+        interpretation += f"H0 shows strongest correlation with {correlations[0][1]} (r = {corr_matrix[i, params.index(correlations[0][1])]:.2f}), "
+        interpretation += "indicating the well-known geometric degeneracy in the CMB.\n\n"
+        
+    elif param == "Omega_b_h2":
+        interpretation += f"The physical baryon density is constrained to {our_value:.5f}, "
+        if abs(differences[param]) < 1.0:
+            interpretation += f"in good agreement with the Planck value of {planck_val:.5f}. "
+        else:
+            interpretation += f"which differs from the Planck value of {planck_val:.5f} by {differences[param]:.2f}σ. "
+        
+        interpretation += "This parameter is primarily constrained by the relative heights of the acoustic peaks in the CMB power spectrum.\n\n"
+        
+    elif param == "Omega_c_h2":
+        interpretation += f"The physical cold dark matter density is found to be {our_value:.4f}, "
+        if abs(differences[param]) < 1.0:
+            interpretation += f"consistent with the Planck measurement of {planck_val:.4f}. "
+        else:
+            interpretation += f"which differs from the Planck measurement of {planck_val:.4f} by {differences[param]:.2f}σ. "
+        
+        interpretation += "This parameter affects the matter-radiation equality redshift and the overall shape of the power spectrum.\n\n"
+        
+    elif param == "n_s":
+        interpretation += f"The scalar spectral index is constrained to {our_value:.4f}, "
+        if abs(differences[param]) < 1.0:
+            interpretation += f"in agreement with the Planck value of {planck_val:.4f}. "
+        else:
+            interpretation += f"which differs from the Planck value of {planck_val:.4f} by {differences[param]:.2f}σ. "
+        
+        interpretation += "The value of n_s < 1 confirms the prediction of simple inflationary models, indicating a slightly red-tilted primordial power spectrum.\n\n"
+        
+    elif param == "A_s":
+        interpretation += f"The primordial amplitude is found to be {our_value:.3e}, "
+        if abs(differences[param]) < 1.0:
+            interpretation += f"consistent with Planck's value of {planck_val:.3e}. "
+        else:
+            interpretation += f"which differs from Planck's value of {planck_val:.3e} by {differences[param]:.2f}σ. "
+        
+        interpretation += "This parameter sets the overall amplitude of the CMB fluctuations.\n\n"
+        
+    elif param == "tau":
+        interpretation += f"The optical depth to reionization is constrained to {our_value:.4f}, "
+        if abs(differences[param]) < 1.0:
+            interpretation += f"in good agreement with Planck's value of {planck_val:.4f}. "
+        else:
+            interpretation += f"which differs from Planck's value of {planck_val:.4f} by {differences[param]:.2f}σ. "
+        
+        interpretation += "This parameter is primarily constrained by the large-scale polarization data in Planck, so our constraint from TT spectrum alone is noteworthy.\n\n"
+
+interpretation += """
+## Parameter Degeneracies
+
+The corner plot reveals several parameter degeneracies that are well-understood in CMB physics:
+
+1. **H0-Ωm degeneracy**: There is a degeneracy between the Hubble constant and matter density. This is because the CMB primarily constrains the acoustic scale, which depends on the combination of these parameters.
+
+2. **ns-As degeneracy**: These parameters show some correlation as they both affect the shape and amplitude of the power spectrum.
+
+3. **τ-As degeneracy**: Reionization optical depth and primordial amplitude are degenerate because both affect the overall amplitude of the peaks. Increasing τ suppresses power, which can be compensated by increasing As.
+
+These degeneracies could be broken by adding additional datasets, such as BAO, supernovae, or CMB polarization.
+"""
+
+# Save interpretation to file
+with open("mcmc_results/parameter_interpretation.md", "w") as f:
+    f.write(interpretation)
+
+print("Interpretation saved to mcmc_results/parameter_interpretation.md")
+print("Planck comparison plot saved to mcmc_results/planck_comparison.png")
+EOF
+
+    # Run the comparison script
+    python3 compare_with_planck.py
+    \end{lstlisting}
+    
+    \item \textbf{Visualize model fits:} Create plots showing how different parameter values affect the predicted power spectrum:
+    \begin{lstlisting}[basicstyle=\small\ttfamily]
+    # Create a script to visualize model impacts
+    cat > visualize_model_fits.py << 'EOF'
+import numpy as np
+import matplotlib.pyplot as plt
+import os
+from theoretical_lcdm import lcdm_power_spectrum
+from data_loader import load_planck_data
+
+# Load Planck data
+ell_data, dl_data, sigma_data = load_planck_data(source="fits")
+
+# Filter the data (optional, for cleaner visualization)
+mask = (ell_data >= 2) & (ell_data <= 2000)
+ell_data = ell_data[mask]
+dl_data = dl_data[mask]
+sigma_data = sigma_data[mask]
+
+# Create output directory
+os.makedirs("mcmc_results/model_fits", exist_ok=True)
+
+# Load posterior samples
+posterior_samples = np.load("mcmc_results/posterior_samples_lambdaCDM.npy")
+param_names = ["H0", "Omega_b_h2", "Omega_c_h2", "n_s", "A_s", "tau"]
+
+# Get best-fit (median) parameters
+median_params = {}
+for i, param in enumerate(param_names):
+    median_params[param] = np.median(posterior_samples[:, i])
+
+# Generate model with median parameters
+ell_model = np.arange(2, 2501)
+dl_model = lcdm_power_spectrum(ell_model, median_params)
+
+# Plot best-fit model vs data
+plt.figure(figsize=(12, 8))
+plt.errorbar(ell_data, dl_data, yerr=sigma_data, fmt='o', markersize=3, 
+             alpha=0.4, label='Planck Data')
+plt.plot(ell_model, dl_model, 'r-', lw=2, label='Best-fit ΛCDM Model')
+
+plt.xscale('log')
+plt.xlabel(r'Multipole $\ell$')
+plt.ylabel(r'$D_\ell$ [$\mu K^2$]')
+plt.title('CMB TT Power Spectrum: Data vs. Best-fit Model')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.savefig("mcmc_results/model_fits/best_fit_model.png", dpi=300)
+plt.close()
+
+# Plot zoomed version of first few peaks
+plt.figure(figsize=(12, 8))
+mask_data = ell_data <= 1000
+mask_model = ell_model <= 1000
+
+plt.errorbar(ell_data[mask_data], dl_data[mask_data], yerr=sigma_data[mask_data], 
+             fmt='o', markersize=3, alpha=0.4, label='Planck Data')
+plt.plot(ell_model[mask_model], dl_model[mask_model], 'r-', lw=2, label='Best-fit ΛCDM Model')
+
+plt.xlabel(r'Multipole $\ell$')
+plt.ylabel(r'$D_\ell$ [$\mu K^2$]')
+plt.title('CMB TT Power Spectrum: First Few Acoustic Peaks')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.savefig("mcmc_results/model_fits/best_fit_zoomed.png", dpi=300)
+plt.close()
+
+# Calculate residuals
+from scipy.interpolate import interp1d
+model_interp = interp1d(ell_model, dl_model, kind='linear', bounds_error=False, fill_value=0)
+dl_model_at_data = model_interp(ell_data)
+residuals = dl_data - dl_model_at_data
+normalized_residuals = residuals / sigma_data
+
+# Plot residuals
+plt.figure(figsize=(12, 6))
+plt.errorbar(ell_data, normalized_residuals, yerr=1, fmt='o', markersize=3, alpha=0.4)
+plt.axhline(0, color='r', ls='-')
+plt.axhline(1, color='r', ls='--', alpha=0.5)
+plt.axhline(-1, color='r', ls='--', alpha=0.5)
+plt.axhline(2, color='r', ls=':', alpha=0.5)
+plt.axhline(-2, color='r', ls=':', alpha=0.5)
+
+plt.xscale('log')
+plt.xlabel(r'Multipole $\ell$')
+plt.ylabel(r'Normalized Residuals $(D_\ell^{\rm data} - D_\ell^{\rm model})/\sigma_\ell$')
+plt.title('Residuals: Data - Model')
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.savefig("mcmc_results/model_fits/residuals.png", dpi=300)
+plt.close()
+
+# Calculate chi-squared
+chi2 = np.sum((residuals / sigma_data)**2)
+dof = len(ell_data) - len(param_names)
+reduced_chi2 = chi2 / dof
+
+print(f"Chi-squared: {chi2:.2f} for {dof} degrees of freedom")
+print(f"Reduced chi-squared: {reduced_chi2:.2f}")
+
+# Sample random models from the posterior
+n_samples = 50
+indices = np.random.choice(len(posterior_samples), n_samples, replace=False)
+sample_models = []
+
+plt.figure(figsize=(12, 8))
+plt.errorbar(ell_data, dl_data, yerr=sigma_data, fmt='o', markersize=3, 
+             alpha=0.2, color='blue', label='Planck Data')
+
+# Plot best-fit model
+plt.plot(ell_model, dl_model, 'r-', lw=3, label='Best-fit Model')
+
+# Plot random models from posterior
+for idx in indices:
+    params = {param_names[i]: posterior_samples[idx, i] for i in range(len(param_names))}
+    dl_sample = lcdm_power_spectrum(ell_model, params)
+    plt.plot(ell_model, dl_sample, '-', lw=0.5, alpha=0.1, color='green')
+
+# Add a sample model to the legend
+plt.plot([], [], '-', lw=1, alpha=0.5, color='green', label='Posterior Samples')
+
+plt.xscale('log')
+plt.xlabel(r'Multipole $\ell$')
+plt.ylabel(r'$D_\ell$ [$\mu K^2$]')
+plt.title('CMB TT Power Spectrum: Model Uncertainty')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.savefig("mcmc_results/model_fits/posterior_models.png", dpi=300)
+plt.close()
+
+# Save chi-squared and goodness-of-fit info
+with open("mcmc_results/model_fits/goodness_of_fit.txt", "w") as f:
+    f.write(f"Chi-squared: {chi2:.2f} for {dof} degrees of freedom\n")
+    f.write(f"Reduced chi-squared: {reduced_chi2:.2f}\n")
+    
+    if reduced_chi2 < 0.8:
+        f.write("\nThe reduced chi-squared < 1 suggests that our error bars might be overestimated or the model has too many free parameters for the available data.\n")
+    elif reduced_chi2 < 1.2:
+        f.write("\nThe reduced chi-squared ≈ 1 indicates a good fit of the model to the data.\n")
+    else:
+        f.write("\nThe reduced chi-squared > 1 suggests that either the error bars are underestimated or the model doesn't fully capture all features in the data.\n")
+
+print("Model fits and diagnostics saved to mcmc_results/model_fits/")
+EOF
+
+    # Run the model visualization script
+    python3 visualize_model_fits.py
+    \end{lstlisting}
+    
+    \item \textbf{Physical interpretation:} Prepare a comprehensive interpretation of results for the scientific report, including:
+    \begin{itemize}
+        \item Implications for cosmological model
+        \item Assessment of parameter precision
+        \item Discussion of limitations of TT-only analysis
+        \item Comparison with other cosmological probes (e.g., BAO, SNe)
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Expected Results for Phase 3}
+
+By the end of Phase 3, we expect to have:
+
+\begin{enumerate}
+    \item Robust constraints on the 6 $\Lambda$CDM parameters.
+    \item Visualizations of parameter posterior distributions and correlations.
+    \item Quantitative comparison with published Planck results.
+    \item Understanding of parameter degeneracies.
+\end{enumerate}
+
+\subsection{Phase 3 Implementation Notes}
+
+Our cleaned-up codebase now includes all necessary components for Phase 3. The key script is \texttt{run\_mcmc\_production.py}, which will:
+
+\begin{enumerate}
+    \item Check availability of the FITS data file
+    \item Run multiple MCMC chains from different starting points
+    \item Save checkpoints throughout the run
+    \item Create comprehensive logs of the MCMC process
+    \item Generate summary visualizations and statistics
+    \item Create a detailed README.md in the results directory
+\end{enumerate}
+
+\section{Phase 4: Scientific Report and Extensions}
+
+Phase 4 involves writing a comprehensive scientific report of our analysis and extending the project with additional features.
+
+\subsection{Tasks for Phase 4}
+
+\subsubsection{Task 4.1: Scientific Report}
+
+\begin{itemize}
+    \item Write a detailed scientific report in LaTeX.
+    \item Include all methods, results, and interpretation.
+    \item Create publication-quality figures.
+    
+    \item \textbf{Report Structure:}
+    \begin{enumerate}
+        \item Abstract
+        \item Introduction to CMB and $\Lambda$CDM cosmology
+        \item Data extraction from Planck FITS file
+        \item Theoretical model implementation
+        \item MCMC methods and convergence
+        \item Parameter constraints and comparison with Planck
+        \item Discussion and interpretation
+        \item Conclusion
+        \item References
+    \end{enumerate}
+\end{itemize}
+
+\subsubsection{Task 4.2: Project Extensions}
+
+Choose at least one extension:
+
+\begin{enumerate}
+    \item \textbf{Extension 1: Include CMB polarization data}
+    \begin{itemize}
+        \item Add Planck EE power spectrum to our analysis.
+        \item Modify \texttt{data\_loader.py} to extract polarization from the FITS file.
+        \item Extend \texttt{theoretical\_lcdm.py} to model polarization.
+        \item Update likelihood to include both TT and EE spectra.
+        \item Analyze improvements in parameter constraints.
+        
+        \item \textbf{Implementation:} Extend the FITS file handling:
+        \begin{lstlisting}[basicstyle=\small\ttfamily]
+        def load_planck_polarization(fits_file, lmax=2500):
+            """Load Planck EE power spectrum from FITS file."""
+            # Read Q and U polarization maps
+            q_map = hp.read_map(fits_file, field=1)
+            u_map = hp.read_map(fits_file, field=2)
+            
+            # Compute EE power spectrum
+            cl_ee = hp.anafast([q_map, u_map], lmax=lmax)[1]
+            
+            # Process similarly to temperature spectrum
+            ell = np.arange(len(cl_ee))
+            dl_ee = ell * (ell + 1) * cl_ee / (2 * np.pi)
+            
+            # Remove monopole and dipole
+            ell = ell[2:]
+            dl_ee = dl_ee[2:]
+            
+            # Scale to μK^2
+            dl_ee *= 1e12
+            
+            return ell, dl_ee
+        \end{lstlisting}
+    \end{itemize}
+    
+    \item \textbf{Extension 2: Model comparison with Bayesian evidence}
+    \begin{itemize}
+        \item Implement nested sampling to compute Bayesian evidence.
+        \item Compare standard $\Lambda$CDM with extended models.
+        \item Calculate Bayes factors for model comparison.
+        
+        \item \textbf{Implementation:} Create a new module for nested sampling:
+        \begin{lstlisting}[basicstyle=\small\ttfamily]
+        def run_nested_sampling(log_likelihood, prior_transform, ndim):
+            """
+            Run nested sampling for Bayesian evidence calculation.
+            
+            Args:
+                log_likelihood: Function returning log-likelihood
+                prior_transform: Function to transform unit cube to parameter space
+                ndim: Number of dimensions
+                
+            Returns:
+                evidence: log(Z) Bayesian evidence
+                samples: Posterior samples
+            """
+            import dynesty
+            
+            # Run nested sampling
+            sampler = dynesty.NestedSampler(
+                log_likelihood,
+                prior_transform,
+                ndim,
+                nlive=500,
+                bound='multi',
+                sample='rwalk'
+            )
+            sampler.run_nested()
+            
+            # Extract results
+            results = sampler.results
+            evidence = results.logz[-1]  # log(Z)
+            samples = results.samples    # Posterior samples
+            
+            return evidence, samples
+        \end{lstlisting}
+    \end{itemize}
+    
+    \item \textbf{Extension 3: Extended parameter space}
+    \begin{itemize}
+        \item Add additional parameters to the $\Lambda$CDM model:
+            \begin{itemize}
+                \item Curvature ($\Omega_K$)
+                \item Equation of state of dark energy ($w$)
+                \item Neutrino mass sum ($\sum m_\nu$)
+            \end{itemize}
+        \item Analyze constraints and compare with standard $\Lambda$CDM.
+        
+        \item \textbf{Implementation:} Extend our \texttt{parameters.py} module:
+        \begin{lstlisting}[basicstyle=\small\ttfamily]
+        # Extended parameters
+        extended_params = fiducial_params.copy()
+        extended_params.update({
+            "Omega_K": 0.0,      # Curvature (0 = flat)
+            "w": -1.0,           # Dark energy equation of state
+            "sum_mnu": 0.06      # Neutrino mass sum in eV
+        })
+        
+        # Extended priors
+        extended_priors = priors.copy()
+        extended_priors.update({
+            "Omega_K": {
+                "dist": "uniform",
+                "min": -0.1, "max": 0.1
+            },
+            "w": {
+                "dist": "uniform",
+                "min": -1.5, "max": -0.5
+            },
+            "sum_mnu": {
+                "dist": "uniform",
+                "min": 0.0, "max": 0.5
+            }
+        })
+        \end{lstlisting}
+        
+        \item The theoretical model would also need to be updated to incorporate these parameters.
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{Task 4.3: Code Documentation and Packaging}
+
+\begin{itemize}
+    \item Add comprehensive docstrings to all functions.
+    \item Create proper README and documentation.
+    \item Package the code for potential reuse.
+    
+    \item \textbf{Implementation:} Update all docstrings to follow numpy style:
+    \begin{lstlisting}[basicstyle=\small\ttfamily]
+    def function_name(param1, param2):
+        """
+        Brief description of function.
+        
+        Parameters
+        ----------
+        param1 : type
+            Description of param1
+        param2 : type
+            Description of param2
+            
+        Returns
+        -------
+        return_type
+            Description of return value
+            
+        Notes
+        -----
+        Additional notes and explanations
+        
+        Examples
+        --------
+        >>> function_name(1, 2)
+        3
+        """
+    \end{lstlisting}
+\end{itemize}
+
+\subsection{Expected Results for Phase 4}
+
+By the end of Phase 4, we expect to have:
+
+\begin{enumerate}
+    \item A comprehensive scientific report in LaTeX format.
+    \item At least one implemented extension that enhances the project.
+    \item Well-documented and packaged code.
+    \item Presentation materials for project demonstration.
+\end{enumerate}
+
+\section{Timeline and Milestones}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Phase} & \textbf{Tasks} & \textbf{Deadline} \\
+\hline
+Phase 3 & MCMC runs & 2 days \\
+        & Convergence analysis & 1 day \\
+        & Parameter constraints & 2 days \\
+        & Comparison with Planck & 1 day \\
+\hline
+Phase 4 & Scientific report draft & 3 days \\
+        & Implementation of extension & 2 days \\
+        & Code documentation & 1 day \\
+        & Final report & 2 days \\
+\hline
+\end{tabular}
+\caption{Project timeline for Phases 3 and 4}
+\end{table}
+
+\section{Conclusion}
+
+We have completed Phases 1 and 2 of the project, successfully implementing the data extraction, theoretical model, and MCMC framework. For Phases 3 and 4, we will focus on running the MCMC analysis, interpreting the results, writing a scientific report, and implementing at least one extension to enhance the project.
+
+Our cleaned-up codebase provides an optimized foundation for these next phases, with all of the required functionality already implemented. The main tasks will be running the analysis with our production-ready scripts, interpreting the results, and documenting our findings in a scientific manner.
+
+\end{document}
