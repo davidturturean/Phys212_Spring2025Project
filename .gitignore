@@ -1,0 +1,33 @@
+# Project specific
+COM_CMB_IQU-smica_2048_R3.00_full.fits
+*.fits
+*.dat
+*.npz
+*.npy
+mcmc_results*/
+output/
+logs/
+__pycache__/
+*.pyc
+
+# Environments
+venv/
+env/
+ENV/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Mac OS
+.DS_Store
+
+# Windows
+Thumbs.db
