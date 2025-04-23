@@ -222,14 +222,21 @@ This section outlines the current structure of the repository, organized by cate
     \item \textbf{Standard MCMC}
     \begin{itemize}
         \item \texttt{standard\_mcmc\_raw\_data\_and\_results/} - Contains raw chains and output from standard MCMC runs
+        \begin{itemize}
+            \item \texttt{chain\_*\_full.npz} - Standard MCMC chain files (4 chains)
+            \item \texttt{corner\_plot.png} - Corner plot of parameter distributions
+            \item \texttt{parameter\_constraints.csv} - Parameter constraints from standard MCMC
+            \item \texttt{posterior\_samples\_lambdaCDM.npy} - Posterior samples
+            \item \texttt{trace\_plots.png} - Trace plots for convergence diagnostics
+        \end{itemize}
     \end{itemize}
     
     \item \textbf{Annealing MCMC}
     \begin{itemize}
         \item \texttt{annealing\_raw\_data/} - Contains raw data from two annealing MCMC runs
         \begin{itemize}
-            \item \texttt{first\_run/} - First annealing run data
-            \item \texttt{second\_run/} - Second annealing run data
+            \item \texttt{first\_run/mcmc\_results\_annealing\_20250422\_170412.zip} - First annealing run results
+            \item \texttt{second\_run/mcmc\_results\_merged.zip} - Second annealing run results with merged chains
         \end{itemize}
     \end{itemize}
 \end{itemize}
@@ -238,9 +245,43 @@ This section outlines the current structure of the repository, organized by cate
 
 \begin{itemize}
     \item \texttt{annealing\_analysis/} - Results from analyzing the annealing MCMC runs
+    \begin{itemize}
+        \item \texttt{annealing\_corner\_plot.png} - Corner plot for annealing chains
+        \item \texttt{annealing\_parameter\_constraints.csv} - Parameter constraints
+        \item \texttt{annealing\_posterior\_samples.npy} - Posterior samples
+        \item \texttt{annealing\_temperature\_schedule.png} - Temperature schedule visualization
+        \item \texttt{annealing\_trace\_plots.png} - Trace plots for annealing chains
+    \end{itemize}
+    
     \item \texttt{annealing\_analysis\_final\_steps\_only/} - Analysis focused on final steps of annealing chains
+    \begin{itemize}
+        \item \texttt{final\_steps\_corner\_plot.png} - Corner plot for final steps
+        \item \texttt{final\_steps\_parameter\_constraints.csv} - Parameter constraints from final steps
+        \item \texttt{final\_steps\_summary.md} - Summary of final steps analysis
+        \item \texttt{final\_steps\_trace\_plots.png} - Trace plots for final steps
+        \item \texttt{gelman\_rubin\_final\_steps.txt} - Convergence statistics for final steps
+    \end{itemize}
+    
     \item \texttt{annealing\_chains\_comparison/} - Comparison between different annealing runs
+    \begin{itemize}
+        \item \texttt{comparison\_summary.txt} - Summary of comparison
+        \item \texttt{corner\_plot\_mcmc\_results\_annealing\_20250422\_170412.png} - Corner plot for first run
+        \item \texttt{corner\_plot\_mcmc\_results\_merged.png} - Corner plot for merged results
+        \item \texttt{gelman\_rubin\_stats.txt} - Convergence statistics
+        \item \texttt{parameter\_comparison.png} - Parameter comparison visualization
+    \end{itemize}
+    
     \item \texttt{standard\_chains\_analysis/} - Results from analyzing standard MCMC runs
+    \begin{itemize}
+        \item \texttt{standard\_chains\_summary.md} - Summary of standard MCMC analysis
+        \item \texttt{standard\_corner\_plot.png} - Corner plot for standard chains
+        \item \texttt{standard\_gelman\_rubin.txt} - Convergence statistics
+        \item \texttt{standard\_parameter\_constraints.csv} - Parameter constraints
+        \item \texttt{standard\_trace\_plots.png} - Trace plots for standard chains
+        \item \texttt{standard\_vs\_annealing.csv} - Comparison data
+        \item \texttt{standard\_vs\_annealing\_comparison.md} - Detailed comparison
+        \item \texttt{standard\_vs\_annealing\_comparison.png} - Comparison visualization
+    \end{itemize}
 \end{itemize}
 
 \subsection{Documentation}
@@ -358,11 +399,11 @@ This section details the content and purpose of each data directory in the repos
 \toprule
 \textbf{Directory} & \textbf{Description} \\
 \midrule
-\texttt{standard\_mcmc\_raw\_data\_and\_results/} & Contains the raw MCMC chains from standard Metropolis-Hastings runs. Includes chain files (\texttt{chain\_*\_full.npz}), posterior samples, and visualization outputs. \\
+\texttt{standard\_mcmc\_raw\_data\_and\_results/} & Contains the raw MCMC chains from standard Metropolis-Hastings runs. Includes chain files (\texttt{chain\_*\_full.npz}), posterior samples, and visualization outputs such as corner plots and trace plots. This directory contains the complete output from the standard MCMC inference pipeline. \\
 \addlinespace
-\texttt{annealing\_raw\_data/first\_run/} & Contains the first temperature annealing MCMC run results as a zip file, with an exponential temperature schedule and appropriate chain data. \\
+\texttt{annealing\_raw\_data/first\_run/} & Contains the first temperature annealing MCMC run results as a zip file. This run uses an exponential temperature schedule as documented in the implementation. The file contains chain data, log-posterior values, and temperature schedules. \\
 \addlinespace
-\texttt{annealing\_raw\_data/second\_run/} & Contains the second temperature annealing MCMC run results as a zip file, including potentially merged chain data from continued runs. \\
+\texttt{annealing\_raw\_data/second\_run/} & Contains the second temperature annealing MCMC run results as a zip file, named \texttt{mcmc\_results\_merged.zip}. This file includes potentially merged chain data from continued runs using the chain continuation methodology. \\
 \bottomrule
 \end{tabular}
 \caption{Raw Data Directories}
@@ -377,13 +418,13 @@ This section details the content and purpose of each data directory in the repos
 \toprule
 \textbf{Directory} & \textbf{Description} \\
 \midrule
-\texttt{annealing\_analysis/} & Contains analysis results from the annealing MCMC runs, including corner plots, trace plots, temperature schedule visualization, parameter constraints, and posterior samples. \\
+\texttt{annealing\_analysis/} & Contains analysis results from the annealing MCMC runs, including corner plots, trace plots, temperature schedule visualization, parameter constraints, and posterior samples. This directory provides a comprehensive analysis of the temperature annealing MCMC performance. \\
 \addlinespace
-\texttt{annealing\_analysis\_final\_steps\_only/} & Contains analysis focused specifically on the final steps of annealing chains, which represent samples from the target distribution after the temperature has reached its final value. Includes parameter constraints, visualizations, and Gelman-Rubin convergence statistics. \\
+\texttt{annealing\_analysis\_final\_steps\_only/} & Contains analysis focused specifically on the final steps of annealing chains, which represent samples from the target distribution after the temperature has reached its final value. Includes parameter constraints, visualizations, Gelman-Rubin convergence statistics, and a detailed summary of the findings. \\
 \addlinespace
-\texttt{annealing\_chains\_comparison/} & Contains comparison results between different annealing runs, including corner plots, parameter comparisons, and convergence statistics. \\
+\texttt{annealing\_chains\_comparison/} & Contains comparison results between different annealing runs, including corner plots, parameter comparisons, Gelman-Rubin convergence statistics, and a summary of the comparison findings. This directory allows for evaluation of different temperature annealing strategies. \\
 \addlinespace
-\texttt{standard\_chains\_analysis/} & Contains analysis results from the standard MCMC runs, including corner plots, trace plots, parameter constraints, Gelman-Rubin statistics, and comparisons with annealing results. \\
+\texttt{standard\_chains\_analysis/} & Contains analysis results from the standard MCMC runs, including corner plots, trace plots, parameter constraints, Gelman-Rubin statistics, and importantly, comparisons with annealing results. This directory facilitates direct comparison between standard and annealing MCMC approaches. \\
 \bottomrule
 \end{tabular}
 \caption{Analysis Results Directories}
