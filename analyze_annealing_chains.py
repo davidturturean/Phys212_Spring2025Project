@@ -183,33 +183,35 @@ def load_annealing_chains(directories=None):
 
 def compute_statistics(chains, burn_in_fraction=0.2, param_names=None):
     """
-    Compute statistics for parameters across all chains
+    Compute parameter statistics across all MCMC chains
     """
+    # Default ΛCDM parameter names if not provided
     if param_names is None:
         param_names = ['H0', 'Omega_b_h2', 'Omega_c_h2', 'n_s', 'A_s', 'tau']
     
     stats_dict = {}
-    
-    # Combine all chains after burn-in
     all_samples = []
     
+    # Process each chain to remove burn-in
     for chain_data in chains:
         chain = chain_data['chain']
-        burn_in = int(burn_in_fraction * len(chain))
-        samples = chain[burn_in:]
+        n_burn = int(burn_in_fraction * len(chain))
+        samples = chain[n_burn:]  # Discard burn-in
         all_samples.append(samples)
     
+    # Stack all chains into a single array
     combined_samples = np.vstack(all_samples)
     
+    # Calculate statistics for each parameter
     for i, param in enumerate(param_names):
-        # Extract parameter values
         values = combined_samples[:, i]
         
-        # Compute median and percentiles
+        # Calculate median and 68% credible interval
         median = np.median(values)
         lower = np.percentile(values, 16)
         upper = np.percentile(values, 84)
         
+        # Store statistics
         stats_dict[param] = {
             'median': median,
             'lower': lower,
@@ -218,6 +220,7 @@ def compute_statistics(chains, burn_in_fraction=0.2, param_names=None):
             'error_plus': upper - median
         }
         
+        # Print results
         print(f"{param}: {median:.6g} + {upper-median:.6g} - {median-lower:.6g} (68% CI)")
     
     return stats_dict, combined_samples
@@ -308,53 +311,67 @@ def export_to_csv(stats_dict, output_file='annealing_parameter_constraints.csv')
 
 def analyze_all_annealing_chains(directories=None, burn_in_fraction=0.2, output_dir='./annealing_analysis'):
     """
-    Analyze all annealing chains and generate plots
+    Master function to analyze temperature annealing MCMC chains
+    
+    This processes all chains, removing burn-in samples, and produces
+    diagnostic plots and statistics for the cosmological parameters.
     """
+    # Create output directory if needed
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
+        print(f"Created output directory: {output_dir}")
     
-    # Load all annealing chains
+    # Find and load all annealing chains
+    print("Searching for temperature annealing chains...")
     chains = load_annealing_chains(directories)
     
     if not chains:
-        print("No annealing chains found!")
+        print("Error: No annealing chains found! Check your input directories.")
         return
     
-    # Compute statistics
+    print(f"Found {len(chains)} annealing chains to analyze")
+    
+    # Standard ΛCDM parameters - could be customized for extended models
     param_names = ['H0', 'Omega_b_h2', 'Omega_c_h2', 'n_s', 'A_s', 'tau']
+    print(f"Analyzing {len(param_names)} cosmological parameters")
+    print(f"Using burn-in fraction: {burn_in_fraction*100}%")
+    
+    # Calculate statistics for all parameters
+    print("\nComputing parameter constraints...")
     stats_dict, combined_samples = compute_statistics(chains, burn_in_fraction, param_names)
     
-    # Create plots
+    # Generate visualization plots
+    print("\nGenerating diagnostic plots...")
     plot_corner(combined_samples, param_names, os.path.join(output_dir, 'annealing_corner_plot.png'))
     plot_trace(chains, param_names, os.path.join(output_dir, 'annealing_trace_plots.png'))
     plot_temperatures(chains, os.path.join(output_dir, 'annealing_temperature_schedule.png'))
     
-    # Export results
+    # Save results to files
+    print("\nSaving analysis results...")
     export_to_csv(stats_dict, os.path.join(output_dir, 'annealing_parameter_constraints.csv'))
-    
-    # Save samples for later use
     np.save(os.path.join(output_dir, 'annealing_posterior_samples.npy'), combined_samples)
     
-    # Print summary
-    print("\nParameter Constraints Summary:")
+    # Compare with Planck 2018 TTTEEE+lowE best-fit values
+    print("\n--- Parameter Constraints Summary ---")
     fiducial_values = {
-        'H0': 67.36,
-        'Omega_b_h2': 0.02237,
-        'Omega_c_h2': 0.1200,
-        'n_s': 0.9649,
-        'A_s': 2.1e-9,
-        'tau': 0.0544
+        'H0': 67.36,       # km/s/Mpc
+        'Omega_b_h2': 0.02237,  # Physical baryon density
+        'Omega_c_h2': 0.1200,   # Physical cold dark matter density
+        'n_s': 0.9649,     # Scalar spectral index
+        'A_s': 2.1e-9,     # Primordial amplitude
+        'tau': 0.0544      # Optical depth
     }
     
     for param, values in stats_dict.items():
         fiducial = fiducial_values.get(param, None)
         if fiducial:
             offset_percent = 100 * (values['median'] - fiducial) / fiducial
-            print(f"{param}: {values['median']:.6g} + {values['error_plus']:.6g} - {values['error_minus']:.6g} (68% CI)")
-            print(f"  (Fiducial: {fiducial}, Offset: {offset_percent:.1f}%)")
+            print(f"{param}: {values['median']:.6g} ± {values['error_plus']:.6g} (68% CI)")
+            print(f"  Planck 2018: {fiducial} | Difference: {offset_percent:.1f}%")
         else:
-            print(f"{param}: {values['median']:.6g} + {values['error_plus']:.6g} - {values['error_minus']:.6g} (68% CI)")
+            print(f"{param}: {values['median']:.6g} ± {values['error_plus']:.6g} (68% CI)")
     
+    print(f"\nAnalysis complete! All results saved to {output_dir}")
     return stats_dict, combined_samples
 
 if __name__ == "__main__":
