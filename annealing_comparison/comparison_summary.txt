@@ -1,0 +1,33 @@
+Parameter Comparison Summary
+================================================================================
+
+H0:
+  mcmc_results_annealing_20250422_170412: 71.4741 + 16.1717 - 20.2684
+  mcmc_results_merged: 66.9365 + 20.6589 - 16.9081
+  Fiducial: 67.36
+
+Omega_b_h2:
+  mcmc_results_annealing_20250422_170412: 0.0223652 + 0.000567435 - 0.000527349
+  mcmc_results_merged: 0.0223879 + 0.000566729 - 0.000565467
+  Fiducial: 0.02237
+
+Omega_c_h2:
+  mcmc_results_annealing_20250422_170412: 0.483846 + 0.213356 - 0.183176
+  mcmc_results_merged: 0.533532 + 0.179319 - 0.232851
+  Fiducial: 0.12
+
+n_s:
+  mcmc_results_annealing_20250422_170412: 1.10549 + 0.0708261 - 0.125165
+  mcmc_results_merged: 1.10921 + 0.0690664 - 0.150249
+  Fiducial: 0.9649
+
+A_s:
+  mcmc_results_annealing_20250422_170412: 2.5416e-09 + 1.66035e-09 - 1.40895e-09
+  mcmc_results_merged: 2.56966e-09 + 1.59381e-09 - 1.41183e-09
+  Fiducial: 2.1e-09
+
+tau:
+  mcmc_results_annealing_20250422_170412: 0.0793387 + 0.00752897 - 0.00798279
+  mcmc_results_merged: 0.0794323 + 0.00780299 - 0.00749638
+  Fiducial: 0.0544
+

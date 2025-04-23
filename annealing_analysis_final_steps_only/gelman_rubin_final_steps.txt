@@ -1,0 +1,9 @@
+Gelman-Rubin Statistics (Final 10800 Steps Only)
+================================================================================
+
+H0: R-hat = 1.002021 (Converged: Yes)
+Omega_b_h2: R-hat = 1.000014 (Converged: Yes)
+Omega_c_h2: R-hat = 1.002208 (Converged: Yes)
+n_s: R-hat = 1.001322 (Converged: Yes)
+A_s: R-hat = 0.999959 (Converged: Yes)
+tau: R-hat = 1.000145 (Converged: Yes)

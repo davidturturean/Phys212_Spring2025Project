@@ -1,0 +1,9 @@
+Gelman-Rubin Statistics for Standard MCMC Chains
+================================================================================
+
+H0: R-hat = 1.003075 (Converged: Yes)
+Omega_b_h2: R-hat = 1.000155 (Converged: Yes)
+Omega_c_h2: R-hat = 1.202285 (Converged: No)
+n_s: R-hat = 1.041083 (Converged: Yes)
+A_s: R-hat = 1.002960 (Converged: Yes)
+tau: R-hat = 1.000209 (Converged: Yes)

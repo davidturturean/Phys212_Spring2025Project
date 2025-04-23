@@ -1,0 +1,9 @@
+Gelman-Rubin Statistics Across All Runs
+=====================================
+
+H0: R-hat = 1.0032 (Converged: Yes)
+Omega_b_h2: R-hat = 1.0000 (Converged: Yes)
+Omega_c_h2: R-hat = 1.0031 (Converged: Yes)
+n_s: R-hat = 1.0022 (Converged: Yes)
+A_s: R-hat = 1.0000 (Converged: Yes)
+tau: R-hat = 1.0002 (Converged: Yes)
