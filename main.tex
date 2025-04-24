@@ -110,7 +110,7 @@
 
 \subsubsection{Core Parameters}
 In this project we use Bayesian inference to calculate the probability distributions of the six parameters of the \(\Lambda\)CDM model (Lambda Cold Dark Matter model),
-\(\Theta=\{H_0,\Omega_b h^2,\Omega_c h^2,n_s,A_s,\tau\}\), from the Planck 2018 data [\cite{planck2018}] on the CMB temperature using a Monte Carlo Markov Chain likelihood analysis (referred throughout this paper as MCMC) with the Metropolis Hastings algorithm. Below, we summarize the theory that connects the CMB temperature power spectrum to our parameters.
+\(\Theta=\{H_0,\Omega_b h^2,\Omega_c h^2,n_s,A_s,\tau\}\), from the Planck 2018 data \cite{planck2018params} on the CMB temperature using a Monte Carlo Markov Chain likelihood analysis (referred throughout this paper as MCMC) with the Metropolis Hastings algorithm. Below, we summarize the theory that connects the CMB temperature power spectrum to our parameters.
 
 \begin{table}[h!]
   \centering
@@ -181,7 +181,7 @@ The comoving angular diameter distance to the last scattering surface is:
   = \frac{1}{1+z_*}\int_0^{z_*}\frac{c\,dz}{H(z)}.
 \end{equation}
 
-Furthermore, a key feature in the CMB power spectrum is the series of acoustic peaks, which result from sound waves in the photon-baryon plasma before recombination. The acoustic scale $\ell_A$ predicts the location of the first peak in multipole space and is given by:
+Furthermore, a key feature in the CMB power spectrum is the series of acoustic peaks, which result from sound waves in the photon-baryon plasma before recombination \cite{hu2002}. The acoustic scale $\ell_A$ predicts the location of the first peak in multipole space and is given by:
 \begin{equation}
   \ell_A = \pi\,\frac{D_A(z_*)}{r_s(z_*)}\,,
 \end{equation}
@@ -233,7 +233,7 @@ We modify the theoretical power spectrum to account for two important physical e
   \text{where }\tau\text{ is the optical depth to reionization}.
 \end{align}
 
-The first effect, Silk damping, suppresses power at small scales due to photon diffusion, while the second effect accounts for the rescattering of CMB photons during the epoch of reionization.
+The first effect, Silk damping, suppresses power at small scales due to photon diffusion \cite{silk1968}, while the second effect accounts for the rescattering of CMB photons during the epoch of reionization.
 
 \subsubsection{Diffusion (Silk Damping) Scale}
 The Silk damping scale $\ell_D$ characterizes the exponential suppression of power at small scales due to photon diffusion. We calculate it as:
@@ -306,7 +306,7 @@ To constrain cosmological parameters, we need to compare our theoretical model w
 
 This exact form reflects the fact that for each multipole $\ell$, we have $2\ell+1$ independent modes (corresponding to $m$ values from $-\ell$ to $\ell$), and the power spectrum estimator follows a $\chi^2$ distribution with $2\ell+1$ degrees of freedom. 
 
-For high multipoles ($\ell \gtrsim 30$), the number of modes becomes large, and by the central limit theorem, the log-likelihood summed over multipoles can be written as the following (see Appendix~\ref{app:gaussian} for mathematical details):
+For high multipoles ($\ell \gtrsim 30$), the number of modes becomes large, and by the central limit theorem, the log-likelihood summed over multipoles can be written as the following \cite{bond2000} (see Appendix~\ref{app:gaussian} for mathematical details):
 
 \begin{equation}
   -2\ln\mathcal{L}(\Theta)
@@ -319,13 +319,13 @@ For high multipoles ($\ell \gtrsim 30$), the number of modes becomes large, and 
   \sigma_\ell = \sqrt{\frac{2}{2\ell+1}}\,C_\ell^{\rm th}.
 \end{equation}
 
-Here, $\mathcal{L}(\Theta)$ is the likelihood function, $C_\ell^{\rm th}(\Theta)$ is the theoretical power spectrum corresponding to the $\Theta$ set of parameters, $C_\ell^{\rm obs}$ is the observed power spectrum, and $\sigma_\ell$ is the uncertainty in the power spectrum estimate derived from cosmic variance. The sum runs from $\ell_{\min}$ to $\ell_{\max}$, which define the multipole range of our analysis. In our approach, we used $\ell_{\min}=30$ and $\ell_{\max}=2500$ for this Gaussian approximation. The variance $\sigma_\ell^2$ decreases with increasing $\ell$ due to the larger number of available modes.
+Here, $\mathcal{L}(\Theta)$ is the likelihood function, $C_\ell^{\rm th}(\Theta)$ is the theoretical power spectrum corresponding to the $\Theta$ set of parameters, $C_\ell^{\rm obs}$ is the observed power spectrum, and $\sigma_\ell$ is the uncertainty in the power spectrum estimate derived from cosmic variance \cite{knox1995}. The sum runs from $\ell_{\min}$ to $\ell_{\max}$, which define the multipole range of our analysis. In our approach, we used $\ell_{\min}=30$ and $\ell_{\max}=2500$ for this Gaussian approximation. The variance $\sigma_\ell^2$ decreases with increasing $\ell$ due to the larger number of available modes.
 
 For lower multipoles ($\ell<30$), where cosmic variance dominates and the number of modes is small, the Gaussian approximation breaks down. Here, one should either use the exact $\chi^2$ likelihood given in the first equation or adopt a hybrid approach where the exact form is used for low $\ell$ and the Gaussian approximation for high $\ell$.
 
 \subsection{Markov Chain Monte Carlo with Temperature Annealing}
 
-We sample the posterior distribution $P(\Theta\mid\mathrm{data})\propto \mathcal{L}(\Theta)\,\pi(\Theta)$ using a modified Metropolis--Hastings algorithm with temperature annealing. This approach helps navigate complex posterior landscapes with multiple local maxima and improves mixing of the chains.
+We sample the posterior distribution $P(\Theta\mid\mathrm{data})\propto \mathcal{L}(\Theta)\,\pi(\Theta)$ using a modified Metropolis--Hastings algorithm with temperature annealing \cite{lewis2002}. This approach helps navigate complex posterior landscapes with multiple local maxima and improves mixing of the chains.
 
 \subsubsection{The Metropolis--Hastings Algorithm}
 
