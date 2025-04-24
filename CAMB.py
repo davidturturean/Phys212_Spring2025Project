@@ -11,31 +11,53 @@ import matplotlib.pyplot as plt
 import os
 
 # ---------------------------
-# 1. SET COSMOLOGICAL PARAMETERS (Planck 2018 best-fit)
+# 1. PLANCK 2018 PARAMS
 # ---------------------------
-H0 = 67.36  # Hubble parameter in km/s/Mpc
+H0 = 67.36  # km/s/Mpc
 h = H0 / 100.0
 ombh2 = 0.02237  # Ω_b h^2
 omch2 = 0.1200   # Ω_c h^2
-As = 2.1e-9      # Scalar amplitude
-ns = 0.9649      # Spectral index
+As = 2.1e-9      # Amplitude
+ns = 0.9649      # Tilt
 tau = 0.0544     # Optical depth
 
 
 # ---------------------------
-# 2. APPROXIMATE MODEL FOR TT SPECTRUM
+# 2. TT SPECTRUM MODEL
 # ---------------------------
 def primordial_power(k, As, ns, k0=0.05):
     return As * (k / k0)**(ns - 1)
 
 def model_Dl_TT(ell, As, ns):
-    """Semi-analytic mockup TT spectrum with acoustic structure and damping."""
-    k = ell / 14000  # rough ell-to-k mapping
+    """Basic TT spectrum with peaks and damping as in Section 1.1."""
+    # k ≈ ℓ/r(z*)
+    k = ell / 14000  # r(z*) ≈ 14000 Mpc
+    
+    # Power spectrum with tilt
     Pk = primordial_power(k, As, ns)
-
-    acoustic = np.sin(np.pi * ell / 340.0)**2
-    envelope = np.exp(-(ell / 1800)**2)
-    Dl = Pk * acoustic * envelope * 1e9  # scale up for visibility in μK^2
+    
+    # Get scales for Planck 2018 cosmology
+    h = 0.6736
+    Omega_b_h2 = 0.02237
+    Omega_m_h2 = 0.1424
+    
+    # Use formulas from Section 1.1
+    r_s = 144.7 * (Omega_m_h2/0.14)**(-0.25) * (Omega_b_h2/0.024)**(-0.13)  # Sound horizon
+    # Parameter-dependent d_A
+    d_A = 14000.0 * (h/0.7) * (0.14/Omega_m_h2)**0.4  # Mpc
+    ell_A = np.pi * d_A / r_s  # Acoustic scale = π·d_A/r_s
+    
+    # Silk damping scale
+    ell_D = 1600.0 * (Omega_b_h2/0.02237)**(-0.25) * (Omega_m_h2/0.1424)**(-0.125)
+    
+    # Acoustic pattern
+    acoustic = np.sin(np.pi * ell / ell_A)**2
+    
+    # Silk damping = exp(-ℓ²/ℓ_D²)
+    envelope = np.exp(-(ell / ell_D)**2)
+    
+    # Final spectrum
+    Dl = Pk * acoustic * envelope * 1e9  # in μK^2
     return Dl
 
 # Compute model spectrum

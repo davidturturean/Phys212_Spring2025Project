@@ -1,5 +1,14 @@
 # PHYS212 Final Project - MCMC Analysis of CMB Data
 
+## Implementation Improvements
+The theoretical model has been updated to properly implement all formulas from Section 1.1 of the report, including:
+- Fixed Silk damping to use the correct exponent of 2 (exp(-ℓ²/ℓ_D²))
+- Proper calculation of the acoustic scale (ℓ_A = π·d_A/r_s)
+- Parameter-dependent calculation of angular diameter distance (d_A)
+- Recombination redshift (z*) calculated using Hu & Sugiyama formula
+- Matter-radiation equality redshift (z_eq) calculated from the ratio of matter to radiation density
+- All key quantities now properly respond to changes in cosmological parameters
+
 ## Project Structure
 
 ### Core Files

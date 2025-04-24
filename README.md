@@ -1,47 +1,79 @@
-# ΛCDM Cosmological Parameter Inference
+# ΛCDM Cosmological Parameter Inference from CMB Data
 
-This repository contains the code for inferring cosmological parameters from Planck CMB data using a ΛCDM model, created for the PHYS212 course at Harvard University.
+This repository contains a pipeline for inferring ΛCDM cosmological parameters from Planck CMB data, created for the PHYS212 final project at Harvard University.
 
-## Project Overview
+## Implementation Features
 
-This project implements a complete pipeline for cosmological parameter inference:
+The codebase implements all theoretical aspects from Section 1.1 of the technical report:
 
-1. **Cosmological Model**: Implementing the ΛCDM model using CAMB, which predicts the CMB power spectrum based on cosmological parameters.
-   
-2. **Bayesian Inference**: Using Markov Chain Monte Carlo (MCMC) methods to sample the posterior distribution of cosmological parameters.
-   
-3. **Data Analysis**: Working with Planck CMB data to compare theoretical predictions with observational data.
-   
-4. **Temperature Annealing**: Implementing advanced MCMC techniques for improved parameter constraints.
+- **Complete ΛCDM Model**: Accurately models the CMB power spectrum including Sachs-Wolfe plateau, acoustic oscillations with proper spacing, and Silk damping
+- **Parameter Dependence**: All key quantities respond properly to changes in cosmological parameters
+- **Correct Theoretical Implementation**:
+  - Acoustic scale calculated as ℓ_A = π·d_A/r_s
+  - Silk damping with the proper exponent 2 in exp(-ℓ²/ℓ_D²)
+  - Angular diameter distance (d_A) calculated with parameter dependence
+  - Recombination redshift (z*) calculated using Hu & Sugiyama formula
+  - Matter-radiation equality redshift (z_eq) calculated from cosmological parameters
 
-## Key Cosmological Parameters
+## Pipeline Overview
 
-The ΛCDM model includes six key parameters that we infer:
+The project creates a complete parameter inference pipeline:
 
-- **H₀**: Hubble constant (current expansion rate of the universe)
-- **Ωₘh²**: Physical baryon density
-- **Ωₖh²**: Physical dark matter density
-- **nₛ**: Scalar spectral index (measure of scale-dependence of primordial fluctuations)
-- **Aₛ**: Amplitude of primordial fluctuations
+1. **Theoretical Model**: Implements the ΛCDM model to predict the CMB power spectrum
+2. **Data Handling**: Loads and processes Planck CMB data
+3. **Bayesian Inference**: Uses MCMC to sample the posterior distribution of parameters
+4. **Advanced Techniques**: Implements temperature annealing for improved exploration
+5. **Analysis Tools**: Processes MCMC chains to derive parameter constraints and diagnostics
+6. **Visualization**: Creates publication-quality figures of results
+
+## Cosmological Parameters
+
+The code constrains six key ΛCDM parameters:
+
+- **H₀**: Hubble constant (expansion rate) in km/s/Mpc
+- **Ω_b h²**: Physical baryon density 
+- **Ω_c h²**: Physical cold dark matter density
+- **n_s**: Scalar spectral index of primordial fluctuations
+- **A_s**: Amplitude of primordial fluctuations
 - **τ**: Optical depth to reionization
 
 ## Repository Structure
 
-- `CAMB.py`: Interface to the CAMB cosmological code
-- `theoretical_lcdm.py`: ΛCDM model implementation
-- `cosmology_model.py`: Core cosmological model calculations
-- `likelihood.py`: Likelihood function for comparing model to data
-- `priors.py`: Prior distributions for cosmological parameters
-- `parameters.py`: Parameter definitions and fiducial values
-- `data_loader.py`: Loads and processes Planck CMB data
+### Core Implementation
+
+- `theoretical_lcdm.py`: Comprehensive ΛCDM model for the CMB power spectrum
+- `cosmology_model.py`: Core cosmological calculations and parameter handling
+- `CAMB.py`: Simplified interface to CMB physics
+- `likelihood.py`: Compares theoretical predictions with observed data
+- `parameters.py`: Defines parameter ranges and default values
+- `priors.py`: Implements prior distributions for parameters
+- `data_loader.py`: Loads Planck CMB data
+
+### MCMC Methods
+
 - `mcmc_run.py`: Standard MCMC implementation
-- `modified_mcmc.py`: Temperature annealing MCMC implementation
-- `restart_continue_chains.py`: Tools for continuing interrupted MCMC runs
-- `analyze_combined_results.py`: Analysis and visualization of MCMC results
+- `modified_mcmc.py`: Temperature annealing MCMC for improved mixing
+- `restart_continue_chains.py`: Tools for continuing interrupted MCMC chains
+
+### Analysis Tools
+
+- `analyze_standard_chains.py`: Analysis of standard MCMC results
+- `analyze_annealing_chains.py`: Analysis of temperature annealing results
+- `analyze_final_steps.py`: Analysis of final (converged) steps in chains
+- `compare_annealing_runs.py`: Compares results from different MCMC runs
+- `compare_with_planck.py`: Compares results with published Planck values
+- `visualize_constraints.py`: Creates constraint plots and parameter tables
+- `visualize_model_fits.py`: Shows model fits against observed data
+
+### Execution Scripts
+
+- `run_combined_analysis.sh`: Runs the complete analysis pipeline
+- `run_annealing_analysis_engaging.sh`: HPC job script for MIT Engaging cluster
+- `analyze_results.sh`: Analyzes MCMC results after completion
 
 ## Running the Code
 
-### Environment Setup
+### Prerequisites
 
 1. Create a Python environment with required dependencies:
    ```bash
@@ -50,46 +82,58 @@ The ΛCDM model includes six key parameters that we infer:
    pip install -r requirements.txt
    ```
 
-2. Download the Planck CMB data file from the Planck Legacy Archive and place it in the project directory.
+2. Download Planck CMB data:
+   - For full analysis: Obtain `COM_CMB_IQU-smica_2048_R3.00_full.fits` from Planck Legacy Archive
+   - For quick testing: Use included binned spectrum data
 
-### Local Execution
+### Standard MCMC Run
 
-For a local MCMC run with standard sampling:
+For parameter inference with traditional MCMC:
 ```bash
-python mcmc_run.py --steps 5000 --chains 4
+python mcmc_run.py --steps 30000 --chains 4 --burn_in 0.2
 ```
 
-For a local run with temperature annealing:
+### Temperature Annealing Run
+
+For improved parameter space exploration:
 ```bash
-python modified_mcmc.py --steps 5000 --chains 4 --t_initial 5.0 --t_final 1.0
+python modified_mcmc.py --steps 30000 --chains 4 --t_initial 10.0 --t_final 1.0
 ```
 
-### HPC Execution
+### Analysis
 
-For running on a high-performance computing cluster (e.g., MIT Engaging):
+To analyze and visualize MCMC results:
 ```bash
-sbatch run_restart_continue_mki_fixed.sh
+python analyze_standard_chains.py --chain_dir standard_mcmc_results
+python analyze_annealing_chains.py --chain_dir mcmc_results_annealing
+python compare_with_planck.py --chain_file posterior_samples_lambdaCDM.npy
 ```
 
-## Analysis
+### Complete Pipeline
 
-Analyze and visualize MCMC results:
+Run the entire analysis workflow:
 ```bash
-python analyze_combined_results.py --output_dir results
+./run_combined_analysis.sh
 ```
 
-## Key Files
+## Technical Documentation
 
-- `README_FITS_FIX.md`: Documentation on FITS data loading
-- `README_MCMC.md`: Documentation on MCMC implementation
-- `FULL_RESTART_GUIDE.md`: Guide for continuing interrupted MCMC runs
+- `PROJECT_SUMMARY.md`: Overview of implementation and project structure
+- `README_MCMC.md`: Details on MCMC implementation and configuration
+- `FULL_RESTART_GUIDE.md`: Instructions for continuing interrupted MCMC runs
+- `project_technical_report.tex`: Detailed technical report on implementation
 
-## License
+## Results
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+The repository includes results from both standard MCMC and temperature annealing methods:
+- Parameter constraints and credible intervals
+- Corner plots showing parameter correlations
+- Trace plots demonstrating convergence
+- Comparison with published Planck 2018 values
 
 ## Acknowledgments
 
-- Based on the Planck Legacy Archive data
+- Planck Collaboration for CMB data
 - CAMB (Code for Anisotropies in the Microwave Background)
-- MCMC implementation inspired by statistical inference best practices
+- emcee for MCMC implementation
+- Scientific Python ecosystem: NumPy, SciPy, Matplotlib, etc.

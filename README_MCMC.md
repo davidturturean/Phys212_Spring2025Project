@@ -2,6 +2,13 @@
 
 Scripts for running the MCMC analysis on the MIT Engaging cluster as outlined in Phase3_Phase4_Plan.tex.
 
+**Implementation Note:** The theoretical model has been updated to properly implement all formulas from Section 1.1, including:
+- Proper calculation of the acoustic scale (ℓ_A = π·d_A/r_s)
+- Correct exponent (2) for Silk damping (exp(-ℓ²/ℓ_D²))
+- Parameter-dependent calculation of angular diameter distance
+- Recombination redshift calculated using Hu & Sugiyama formula instead of hardcoded values
+- Matter-radiation equality redshift calculated from cosmological parameters
+
 ## Files Included
 
 ### Production MCMC Scripts

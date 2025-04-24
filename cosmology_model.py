@@ -10,50 +10,50 @@ from scipy.integrate import quad, solve_ivp
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 
-# Physical constants
-c = 299792.458  # Speed of light in km/s
-G = 6.67430e-11  # Gravitational constant in m^3 kg^-1 s^-2
-h_planck = 6.62607015e-34  # Planck constant in J.s
-k_B = 1.380649e-23  # Boltzmann constant in J/K
-sigma_T = 6.6524587321e-29  # Thomson cross-section in m^2
-Mpc_to_m = 3.08567758e22  # Megaparsec to meters
+# Constants
+c = 299792.458  # Light speed (km/s)
+G = 6.67430e-11  # Newton's G (m^3/kg/s^2)
+h_planck = 6.62607015e-34  # Planck const (J.s)
+k_B = 1.380649e-23  # Boltzmann (J/K)
+sigma_T = 6.6524587321e-29  # Thomson x-section (m^2)
+Mpc_to_m = 3.08567758e22  # Mpc to m conversion
 
-# CMB parameters
-T_cmb = 2.7255  # CMB temperature in K
-rho_gamma = (np.pi**2 / 15) * (k_B * T_cmb)**4 / (c**3 * h_planck**3)  # Radiation energy density
+# CMB stuff
+T_cmb = 2.7255  # CMB temp (K)
+rho_gamma = (np.pi**2 / 15) * (k_B * T_cmb)**4 / (c**3 * h_planck**3)  # Radiation density
 
-# Pivot scale for primordial spectrum
+# Pivot scale 
 k_pivot = 0.05  # Mpc^-1
 
 def hubble_parameter(z, H0, Omega_m, Omega_r, Omega_Lambda):
     """
-    Calculate the Hubble parameter at redshift z.
+    Get H(z) at redshift z.
     
     Args:
-        z (float): Redshift
-        H0 (float): Hubble constant in km/s/Mpc
-        Omega_m (float): Matter density parameter
-        Omega_r (float): Radiation density parameter
-        Omega_Lambda (float): Dark energy density parameter
+        z: redshift
+        H0: Hubble constant (km/s/Mpc)
+        Omega_m: matter density
+        Omega_r: radiation density
+        Omega_Lambda: dark energy density
         
     Returns:
-        float: H(z) in km/s/Mpc
+        H(z) in km/s/Mpc
     """
     return H0 * np.sqrt(Omega_r * (1 + z)**4 + Omega_m * (1 + z)**3 + Omega_Lambda)
 
 def comoving_distance(z, H0, Omega_m, Omega_r, Omega_Lambda):
     """
-    Calculate the comoving distance to redshift z.
+    Get comoving distance to z.
     
     Args:
-        z (float): Redshift
-        H0 (float): Hubble constant in km/s/Mpc
-        Omega_m (float): Matter density parameter
-        Omega_r (float): Radiation density parameter
-        Omega_Lambda (float): Dark energy density parameter
+        z: redshift
+        H0: Hubble constant
+        Omega_m: matter density
+        Omega_r: radiation density
+        Omega_Lambda: dark energy density
         
     Returns:
-        float: Comoving distance in Mpc
+        comoving distance (Mpc)
     """
     def integrand(z_prime):
         return c / hubble_parameter(z_prime, H0, Omega_m, Omega_r, Omega_Lambda)
@@ -63,40 +63,40 @@ def comoving_distance(z, H0, Omega_m, Omega_r, Omega_Lambda):
 
 def angular_diameter_distance(z, H0, Omega_m, Omega_r, Omega_Lambda):
     """
-    Calculate the angular diameter distance to redshift z.
+    Get angular diameter distance to z.
     
     Args:
-        z (float): Redshift
-        H0 (float): Hubble constant in km/s/Mpc
-        Omega_m (float): Matter density parameter
-        Omega_r (float): Radiation density parameter
-        Omega_Lambda (float): Dark energy density parameter
+        z: redshift
+        H0: Hubble constant
+        Omega_m: matter density
+        Omega_r: radiation density
+        Omega_Lambda: dark energy density
         
     Returns:
-        float: Angular diameter distance in Mpc
+        angular diameter distance (Mpc)
     """
     d_C = comoving_distance(z, H0, Omega_m, Omega_r, Omega_Lambda)
     return d_C / (1 + z)
 
 def sound_horizon(z_star, H0, Omega_b_h2, Omega_m_h2):
     """
-    Calculate the sound horizon at redshift z_star (recombination).
+    Get sound horizon at recombination.
     
     Args:
-        z_star (float): Recombination redshift
-        H0 (float): Hubble constant in km/s/Mpc
-        Omega_b_h2 (float): Physical baryon density
-        Omega_m_h2 (float): Physical matter density
+        z_star: recombination redshift
+        H0: Hubble constant
+        Omega_b_h2: physical baryon density
+        Omega_m_h2: physical matter density
         
     Returns:
-        float: Sound horizon in Mpc
+        sound horizon (Mpc)
     """
-    # Convert to physical densities
+    # Convert params
     h = H0 / 100.0
     Omega_b = Omega_b_h2 / h**2
     Omega_m = Omega_m_h2 / h**2
-    Omega_r = 4.15e-5 / h**2  # Radiation density including photons and neutrinos
-    Omega_Lambda = 1 - Omega_m - Omega_r  # Assuming flat universe
+    Omega_r = 4.15e-5 / h**2  # Radiation (γ+ν)
+    Omega_Lambda = 1 - Omega_m - Omega_r  # Flat universe
     
     def integrand(z_prime):
         # Sound speed
@@ -110,16 +110,16 @@ def sound_horizon(z_star, H0, Omega_b_h2, Omega_m_h2):
 
 def recombination_redshift(Omega_b_h2, Omega_m_h2):
     """
-    Calculate the recombination redshift using the fitting formula from Hu & Sugiyama.
+    Get z_* using Hu & Sugiyama formula.
     
     Args:
-        Omega_b_h2 (float): Physical baryon density
-        Omega_m_h2 (float): Physical matter density
+        Omega_b_h2: physical baryon density
+        Omega_m_h2: physical matter density
         
     Returns:
-        float: Recombination redshift z_*
+        z_* (recombination redshift)
     """
-    # Fitting formula for z_star from Hu & Sugiyama (1996)
+    # Hu & Sugiyama (1996) formula
     g1 = 0.0783 * Omega_b_h2**(-0.238) / (1 + 39.5 * Omega_b_h2**0.763)
     g2 = 0.560 / (1 + 21.1 * Omega_b_h2**1.81)
     
@@ -127,126 +127,124 @@ def recombination_redshift(Omega_b_h2, Omega_m_h2):
 
 def primordial_power_spectrum(k, A_s, n_s):
     """
-    Calculate the primordial power spectrum.
+    Get primordial power spectrum.
     
     Args:
-        k (float or array): Wavenumber in Mpc^-1
-        A_s (float): Primordial amplitude at pivot scale
-        n_s (float): Scalar spectral index
+        k: wavenumber (Mpc^-1)
+        A_s: amplitude at pivot scale
+        n_s: spectral index
         
     Returns:
-        float or array: Primordial power P(k)
+        P(k) 
     """
     return A_s * (k / k_pivot)**(n_s - 1)
 
 def transfer_function_bbks(k, Omega_m_h2, Omega_b_h2, h):
     """
-    BBKS transfer function (Bardeen, Bond, Kaiser, Szalay).
-    A simplified transfer function for matter perturbations.
+    BBKS transfer function with baryon correction.
     
     Args:
-        k (float or array): Wavenumber in h/Mpc
-        Omega_m_h2 (float): Physical matter density
-        Omega_b_h2 (float): Physical baryon density
-        h (float): Dimensionless Hubble parameter
+        k: wavenumber (h/Mpc)
+        Omega_m_h2: matter density
+        Omega_b_h2: baryon density
+        h: H0/100
         
     Returns:
-        float or array: Transfer function T(k)
+        T(k)
     """
-    # Convert to physical units
-    k_phys = k * h  # Convert to Mpc^-1
+    # Convert units
+    k_phys = k * h  # To Mpc^-1
     
-    # Scale of equality
+    # Equality scale
     Omega_m = Omega_m_h2 / h**2
     z_eq = 25000 * Omega_m * h**2 / T_cmb**4
     k_eq = 0.073 * Omega_m * h**2 * T_cmb**(-2)  # Mpc^-1
     
-    # BBKS fitting formula with baryon correction
+    # BBKS formula
     q = k_phys / (k_eq * h)
     
-    # Baryon effects (approximate)
+    # Baryon stuff
     alpha_b = 2.07 * k_eq * h * (1 + R_drag(Omega_b_h2, Omega_m_h2))**(-3/4)
     beta_b = 0.5 + (Omega_b_h2/Omega_m_h2) / 3
     
-    # BBKS transfer function
+    # BBKS function
     x = q * np.sqrt(alpha_b)
     T_bbks = np.log(1 + 2.34 * x) / (2.34 * x) * \
              (1 + 3.89 * x + (16.1 * x)**2 + (5.46 * x)**3 + (6.71 * x)**4)**(-0.25)
     
-    # Apply baryon correction
+    # Add baryon effects
     T_baryon = T_bbks * (1 + (beta_b - 1) * (1 + (k_phys/5)**2)**(-1))
     
     return T_baryon
 
 def R_drag(Omega_b_h2, Omega_m_h2):
     """
-    Calculate R_drag parameter for baryon effects.
+    Get R_drag for baryon effects.
     
     Args:
-        Omega_b_h2 (float): Physical baryon density
-        Omega_m_h2 (float): Physical matter density
+        Omega_b_h2: baryon density
+        Omega_m_h2: matter density
         
     Returns:
-        float: R_drag
+        R_drag value
     """
-    # Simplified approximation
+    # Quick approximation
     return 31.5 * Omega_b_h2 / T_cmb**4 * (1000 / recombination_redshift(Omega_b_h2, Omega_m_h2))
 
 def radiation_transfer_function(k, ell, tau, theta_s):
     """
-    Simplified radiation transfer function for the CMB.
-    This is a semi-analytic approximation that includes main features:
-    - Acoustic oscillations 
-    - Diffusion damping (Silk damping)
-    - Reionization damping at low ell
+    Basic CMB radiation transfer function.
+    Includes:
+    - Acoustic peaks
+    - Silk damping
+    - Reionization effects
     
     Args:
-        k (float or array): Wavenumber in Mpc^-1
-        ell (int or array): Multipole moment
-        tau (float): Optical depth to reionization
-        theta_s (float): Sound horizon angle (rad)
+        k: wavenumber (Mpc^-1)
+        ell: multipole
+        tau: optical depth
+        theta_s: sound horizon angle (rad)
         
     Returns:
-        float or array: Radiation transfer function
+        Transfer function
     """
-    # Use ell ~ k*r where r is the angular diameter distance to recombination
-    ell_k = ell  # We assume k values are already appropriately scaled
+    # ell ~ k*r (r = angular diameter distance)
+    ell_k = ell
     
-    # Acoustic oscillations
+    # Acoustic part
     acoustic = np.sin(np.pi * ell / (theta_s * 180 / np.pi))**2
     
-    # Silk damping envelope
-    k_silk = 0.2 * Mpc_to_m  # Silk scale in Mpc^-1
-    ell_silk = 1800  # Approximate ell for Silk damping
+    # Silk damping
+    k_silk = 0.2 * Mpc_to_m
+    ell_silk = 1800
     envelope = np.exp(-(ell / ell_silk)**2)
     
-    # Reionization damping
+    # Reionization
     reion_damping = np.exp(-2 * tau * (ell < 30))
     
-    # Combined effect
+    # All together
     T_rad = acoustic * envelope * reion_damping
     
     return T_rad
 
 def angular_power_spectrum(ell, params):
     """
-    Calculate the CMB TT angular power spectrum.
+    Get CMB TT power spectrum.
     
     Args:
-        ell (array): Multipole moments
-        params (dict): Cosmological parameters
-            Required keys:
-            - 'H0': Hubble constant in km/s/Mpc
-            - 'Omega_b_h2': Physical baryon density
-            - 'Omega_c_h2': Physical cold dark matter density
-            - 'n_s': Scalar spectral index
-            - 'A_s': Primordial amplitude
-            - 'tau': Reionization optical depth
+        ell: multipoles
+        params: cosmo params dict with:
+            - H0: Hubble constant
+            - Omega_b_h2: baryon density
+            - Omega_c_h2: CDM density
+            - n_s: spectral index
+            - A_s: amplitude
+            - tau: optical depth
             
     Returns:
-        array: CMB TT power spectrum D_ell values
+        D_ell values (μK^2)
     """
-    # Extract parameters
+    # Get params
     H0 = params['H0']
     h = H0 / 100.0
     Omega_b_h2 = params['Omega_b_h2']
@@ -256,57 +254,55 @@ def angular_power_spectrum(ell, params):
     A_s = params['A_s']
     tau = params['tau']
     
-    # Calculate recombination redshift
+    # Get z_star
     z_star = recombination_redshift(Omega_b_h2, Omega_m_h2)
     
-    # Calculate sound horizon
+    # Get sound horizon
     r_s = sound_horizon(z_star, H0, Omega_b_h2, Omega_m_h2)
     
-    # Calculate angular diameter distance to recombination
+    # Get angular diameter distance
     Omega_m = Omega_m_h2 / h**2
     Omega_r = 4.15e-5 / h**2
     Omega_Lambda = 1 - Omega_m - Omega_r
     d_A = angular_diameter_distance(z_star, H0, Omega_m, Omega_r, Omega_Lambda)
     
     # Sound horizon angle
-    theta_s = r_s / d_A * 180 / np.pi  # in degrees
+    theta_s = r_s / d_A * 180 / np.pi  # degrees
     
-    # Semi-analytic approximation
-    # Convert multipoles to approximate wavenumbers
-    k_array = ell / d_A  # Approximate relation
+    # Approx ℓ to k conversion
+    k_array = ell / d_A
     
-    # Calculate primordial power spectrum
+    # Get primordial power
     P_prim = primordial_power_spectrum(k_array, A_s, n_s)
     
-    # Apply radiation transfer function
+    # Apply transfer function
     T_rad = radiation_transfer_function(k_array, ell, tau, theta_s)
     
-    # Combine to get power spectrum
+    # Get C_ell
     C_ell = P_prim * T_rad
     
     # Convert to D_ell = ℓ(ℓ+1)C_ℓ/2π
     D_ell = ell * (ell + 1) * C_ell / (2 * np.pi)
     
-    # Scale to μK^2
+    # To μK^2
     D_ell *= 1e9
     
     return D_ell
 
 def create_improved_model(ell, params):
     """
-    Create an improved semi-analytic ΛCDM model for the CMB TT power spectrum.
+    Better ΛCDM model for CMB TT spectrum.
     
-    This model is physically motivated but simplified compared to full Boltzmann codes.
-    It captures the key features of the CMB power spectrum.
+    Not as good as full Boltzmann code but has all the main features.
     
     Args:
-        ell (array): Multipole moments
-        params (dict): Cosmological parameters
+        ell: multipoles
+        params: cosmo params
         
     Returns:
-        array: CMB TT power spectrum D_ell values
+        D_ell values
     """
-    # Extract parameters
+    # Get params
     A_s = params.get('A_s', 2.1e-9)
     n_s = params.get('n_s', 0.965)
     h = params.get('H0', 67.36) / 100.0
@@ -314,54 +310,67 @@ def create_improved_model(ell, params):
     Omega_c_h2 = params.get('Omega_c_h2', 0.1200)
     tau = params.get('tau', 0.054)
     
-    # Derived parameters
+    # Derived stuff
     Omega_m_h2 = Omega_b_h2 + Omega_c_h2
-    z_star = 1090  # Recombination redshift
     
-    # Physical scales
-    r_s = 147  # Sound horizon at recombination in Mpc
-    theta_s = r_s * h / (14000.0)  # Angular scale in radians
-    k_D = 0.2 / r_s  # Silk damping scale
+    # Get z_star - Hu & Sugiyama formula
+    g1 = 0.0783 * Omega_b_h2**(-0.238) / (1 + 39.5 * Omega_b_h2**0.763)
+    g2 = 0.560 / (1 + 21.1 * Omega_b_h2**1.81)
+    z_star = 1048 * (1 + 0.00124 * Omega_b_h2**(-0.738)) * (1 + g1 * Omega_m_h2**g2)
     
-    # Create the power spectrum
+    # Get sound horizon
+    r_s = sound_horizon(z_star, params['H0'], Omega_b_h2, Omega_m_h2)
+    
+    # Get d_A to last scattering
+    Omega_m = Omega_m_h2 / h**2
+    Omega_r = 4.15e-5 / h**2
+    Omega_Lambda = 1 - Omega_m - Omega_r
+    d_A = angular_diameter_distance(z_star, params['H0'], Omega_m, Omega_r, Omega_Lambda)
+    
+    # Acoustic scale ℓ_A = π·d_A/r_s
+    ell_A = np.pi * d_A / r_s
+    
+    # Sound horizon angle
+    theta_s = r_s / d_A  # radians
+    
+    # Silk damping scale
+    ell_D = 1600.0 * (Omega_b_h2/0.02237)**(-0.25) * (Omega_m_h2/0.1424)**(-0.125)
+    
+    # Power spectrum array
     dl = np.zeros_like(ell, dtype=float)
     
-    # Primary peak location and scale
-    primary_peak_l = 220
+    # First peak position - should be around ell_A
+    primary_peak_l = ell_A
     
     for i, l in enumerate(ell):
-        # Primordial power spectrum with proper spectral tilt
+        # Primordial power with tilt
         P_prim = A_s * (l / 200.0)**(n_s - 1.0)
         
-        # Sachs-Wolfe plateau at low ℓ (large scales)
+        # SW plateau (large scales)
         sachs_wolfe = 1.0 / (1.0 + (l/22.0)**2)
         
-        # First acoustic peak envelope (initial power)
+        # First peak shape
         first_peak_env = 6000.0 / (1.0 + ((l-primary_peak_l)/100.0)**2)
         
-        # Acoustic oscillations with proper phase and spacing
-        # The spacing between peaks is determined by sound horizon
+        # Acoustic oscillations
         acoustic_phase = np.pi * (l - primary_peak_l) / (primary_peak_l * 0.75)
         acoustic_osc = 0.6 + 0.4 * np.cos(acoustic_phase)
         
-        # Silk damping envelope - stronger exponential falloff at high ℓ
-        damping_scale = 1600.0  # Silk damping scale in ℓ
-        damping = np.exp(-(l / damping_scale)**1.8)
+        # Silk damping - exp(-ℓ²/ℓ_D²) as in main.tex
+        damping = np.exp(-(l / ell_D)**2)
         
-        # Combine all effects with proper amplitudes:
-        # - Sachs-Wolfe plateau dominates at low ℓ
-        # - Acoustic peaks in the intermediate range
-        # - Damping tail at high ℓ
+        # Put it all together:
+        # SW at low ℓ, acoustic peaks in middle, damping at high ℓ
         sw_amplitude = 1000.0 * sachs_wolfe
         acoustic_amplitude = P_prim * first_peak_env * acoustic_osc * damping
         
-        # Combined spectrum with proper weighting
+        # Final spectrum
         dl[i] = sw_amplitude + acoustic_amplitude
     
-    # Scale already built into the model components
+    # Already scaled
     dl_scaled = dl
     
-    # Apply reionization damping at large scales
+    # Reionization effects at large scales
     reion_damping = np.exp(-2 * tau * (ell < 30))
     dl_scaled *= reion_damping
     
@@ -369,42 +378,41 @@ def create_improved_model(ell, params):
 
 def compute_cl(params):
     """
-    Interface function to compute theoretical CMB TT power spectrum.
-    Compatible with likelihood code.
+    Get CMB TT power spectrum - main interface function.
     
     Args:
-        params (dict): Cosmological parameters
+        params: cosmo parameters
             
     Returns:
-        array: CMB TT power spectrum D_ell values
+        D_ell values
     """
-    # Define ell range
+    # Set ell range
     ell = np.arange(2, 2501)
     
-    # First try the improved model
+    # Try best model first
     try:
         D_ell = create_improved_model(ell, params)
-        print("Using improved ΛCDM model with acoustic oscillations")
+        print("Using better ΛCDM model")
         return D_ell
     except Exception as e:
-        print(f"Error in improved model: {e}")
+        print(f"Error: {e}")
         
-    # Next try the semi-analytic model
+    # Try simpler model next
     try:
         D_ell = angular_power_spectrum(ell, params)
-        print("Using semi-analytic cosmological model")
+        print("Using semi-analytic model")
         return D_ell
     except Exception as e:
-        print(f"Error in angular_power_spectrum: {e}")
+        print(f"Error: {e}")
     
-    # Fall back to simplified model if both fail
-    print("Falling back to simplified model")
+    # Last resort
+    print("Using basic model")
     from CAMB import model_Dl_TT
     A_s = params['A_s']
     n_s = params['n_s']
     D_ell = model_Dl_TT(ell, A_s, n_s)
     
-    # Apply reionization effect if tau is provided
+    # Add reionization
     if 'tau' in params:
         tau = params['tau']
         D_ell *= np.exp(-2 * tau * (ell < 30))
@@ -413,15 +421,15 @@ def compute_cl(params):
 
 def test_model(plot=True):
     """
-    Test the cosmology model with Planck 2018 parameters.
+    Test model with Planck 2018 params.
     
     Args:
-        plot (bool): Whether to plot the results
+        plot: show plot or not
         
     Returns:
-        tuple: (ell, D_ell) arrays
+        ell and D_ell values
     """
-    # Planck 2018 parameters
+    # Planck 2018 best-fit
     params = {
         'H0': 67.36,
         'Omega_b_h2': 0.02237,
@@ -431,18 +439,18 @@ def test_model(plot=True):
         'tau': 0.0544
     }
     
-    # Define ell range
+    # ell values
     ell = np.arange(2, 2501)
     
-    # Calculate power spectrum
+    # Get spectrum
     D_ell = compute_cl(params)
     
     if plot:
         plt.figure(figsize=(10, 6))
-        plt.plot(ell, D_ell, 'b-', label='Model TT Spectrum')
-        plt.xlabel(r'Multipole $\ell$')
+        plt.plot(ell, D_ell, 'b-', label='TT Spectrum')
+        plt.xlabel(r'$\ell$')$')
         plt.ylabel(r'$D_\ell$ [$\mu K^2$]')
-        plt.title('Theoretical CMB TT Power Spectrum (ΛCDM)')
+        plt.title('CMB TT Power Spectrum (ΛCDM)')
         plt.grid(True, alpha=0.3)
         plt.legend()
         plt.tight_layout()

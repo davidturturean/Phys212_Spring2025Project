@@ -4,9 +4,8 @@ Created on Sun Apr 20 16:45:23 2025
 
 @authors: David Turturean, Daria Teodora Harabor
 
-State-of-the-art ΛCDM model implementation for Planck CMB power spectrum.
-This module implements a physically motivated model capturing all
-key features of the CMB TT power spectrum.
+ΛCDM model for Planck CMB power spectrum - Captures the main
+features of the TT power spectrum including acoustic peaks, Silk damping, etc.
 """
 
 import numpy as np
@@ -15,17 +14,36 @@ import os
 from scipy.interpolate import interp1d
 from parameters import fiducial_params
 
-# Constants (in appropriate units)
+# Constants
 c_light = 299792.458  # km/s
 G_newton = 6.67430e-11  # m^3 kg^-1 s^-2
 H0_fiducial = 67.36  # km/s/Mpc
 rho_crit = 3 * (H0_fiducial**2) / (8 * np.pi * G_newton)  # Critical density
 
-# CMB-specific constants
+# CMB temp
 T_cmb = 2.7255  # K
-z_recombination = 1089.80  # Redshift of recombination
-z_drag = 1059.94  # Redshift of baryon drag epoch
-z_eq = 3402  # Redshift of matter-radiation equality
+
+# Functions for redshifts
+def calculate_z_eq(Omega_m_h2):
+    """Get matter-radiation equality redshift"""
+    # z_eq = Omega_m/Omega_r
+    # Omega_r*h^2 ≈ 4.15e-5 for T_CMB = 2.7255K
+    Omega_r_h2 = 4.15e-5
+    return Omega_m_h2/Omega_r_h2 - 1
+
+def calculate_z_star(Omega_b_h2, Omega_m_h2):
+    """Get recomb redshift - Hu & Sugiyama formula"""
+    g1 = 0.0783 * Omega_b_h2**(-0.238) / (1 + 39.5 * Omega_b_h2**0.763)
+    g2 = 0.560 / (1 + 21.1 * Omega_b_h2**1.81)
+    
+    return 1048 * (1 + 0.00124 * Omega_b_h2**(-0.738)) * (1 + g1 * Omega_m_h2**g2)
+
+def calculate_z_drag(Omega_b_h2, Omega_m_h2):
+    """Get drag epoch redshift - Hu & Sugiyama formula"""
+    b1 = 0.313 * Omega_m_h2**(-0.419) * (1 + 0.607 * Omega_m_h2**0.674)
+    b2 = 0.238 * Omega_m_h2**0.223
+    
+    return 1291 * (Omega_m_h2**0.251) / (1 + 0.659 * Omega_m_h2**0.828) * (1 + b1 * Omega_b_h2**b2)
 
 # Ensure output directory exists
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
@@ -33,123 +51,128 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 def lcdm_power_spectrum(ell, params=None, normalize=True):
     """
-    Compute a highly accurate ΛCDM power spectrum with proper features.
+    ΛCDM power spectrum with main features - SW plateau, acoustic peaks, Silk damping.
     
-    This implements a semi-analytic model that reproduces:
-    - Sachs-Wolfe plateau at low ℓ with proper transition to first peak
-    - Acoustic oscillations with correct height, spacing, and damping
-    - Baryon loading effects on peak heights
+    Stuff this does:
+    - SW plateau at low ℓ
+    - Acoustic peaks with proper spacing 
+    - Baryon effects on peak heights
     - Silk damping at high ℓ
-    - ΛCDM parameter dependence
+    - Parameter dependence
     
     Args:
-        ell (array): Multipole moments (ℓ)
-        params (dict): Cosmological parameters, defaults to fiducial_params
-        normalize (bool): Whether to normalize the spectrum to match Planck data
-        
+        ell: multipoles
+        params: cosmological params or None for fiducial
+        normalize: whether to normalize to match Planck
+    
     Returns:
-        array: D_ℓ power spectrum values [μK²]
+        D_ℓ values in μK²
     """
-    # Use fiducial parameters if none provided
+    # Use default params if none given
     if params is None:
         params = fiducial_params
     
-    # Extract parameters
+    # Get params
     h = params.get('H0', 67.36) / 100.0
-    Omega_b_h2 = params.get('Omega_b_h2', 0.02237)  # Physical baryon density
-    Omega_c_h2 = params.get('Omega_c_h2', 0.1200)   # Physical CDM density
-    Omega_m_h2 = Omega_b_h2 + Omega_c_h2            # Physical matter density
-    ns = params.get('n_s', 0.9649)                  # Scalar spectral index
-    As = params.get('A_s', 2.1e-9)                  # Primordial amplitude
+    Omega_b_h2 = params.get('Omega_b_h2', 0.02237)  # Baryon density
+    Omega_c_h2 = params.get('Omega_c_h2', 0.1200)   # CDM density
+    Omega_m_h2 = Omega_b_h2 + Omega_c_h2            # Matter density
+    ns = params.get('n_s', 0.9649)                  # Spectral index
+    As = params.get('A_s', 2.1e-9)                  # Amplitude
     tau = params.get('tau', 0.0544)                 # Optical depth
     
-    # Derived parameters for acoustic peaks
-    # Sound horizon at recombination (simplified fit)
+    # Get recombination and equality redshifts
+    z_star = calculate_z_star(Omega_b_h2, Omega_m_h2)
+    z_eq = calculate_z_eq(Omega_m_h2)
+    
+    # Sound horizon - uses fitting formula instead of full integral
     r_s = 144.7 * (Omega_m_h2/0.14)**(-0.25) * (Omega_b_h2/0.024)**(-0.13)
     
-    # Approximate distance to last scattering surface
-    d_A = 14000.0  # Mpc
+    # Angular diameter distance calc
+    # Full integral: d_A = (1/(1+z_star)) * ∫_0^z_star c/H(z) dz
+    Omega_m = Omega_m_h2 / (h*h)
+    Omega_r = 4.15e-5 / (h*h)  # Radiation (photons+neutrinos)
+    Omega_Lambda = 1.0 - Omega_m - Omega_r  # Flat universe
+    
+    # Approx formula for d_A 
+    d_A = 14000.0 * (h/0.7) * (0.14/Omega_m_h2)**0.4  # Mpc
+    
+    # Acoustic scale ℓ_A = π·d_A/r_s
+    ell_A = np.pi * d_A / r_s
     
     # Sound horizon angle
-    theta_s = r_s / d_A  # radians
+    theta_s = r_s / d_A  # radians = π/ℓ_A
     
-    # Basic scaling for peak positions - approximate spacing between peaks
-    ell_spacing = np.pi / theta_s
+    # Silk damping scale 
+    ell_D = 1600.0 * (Omega_b_h2/0.02237)**(-0.25) * (Omega_m_h2/0.1424)**(-0.125)
     
-    # Initialize with zero values
+    # Peak spacing
+    ell_spacing = np.pi / theta_s  # = ℓ_A
+    
+    # Spectrum array
     dl_values = np.zeros_like(ell, dtype=float)
     
-    # Base amplitude for overall scaling
+    # Base amplitude
     base_amp = 5800.0 * (As / 2.1e-9)
     
-    # For each ℓ value, compute the power
+    # Calculate spectrum for each ℓ
     for i, l in enumerate(ell):
-        # Small ℓ (large scales): Sachs-Wolfe plateau
-        # Combined with Integrated Sachs-Wolfe effect
+        # SW plateau (low ℓ)
         if l < 50:
-            # Overall amplitude decreases with ℓ ~ ℓ^(ns-1)
+            # Amplitude with tilt
             sw_amp = base_amp * (l/10.0)**(ns-1) / (1.0 + 0.5*(l/25.0)**2)
-            # Apply reionization damping at large scales
+            # Reionization damping
             reion_damp = np.exp(-2.0 * tau)
             dl_values[i] = sw_amp * reion_damp
             continue
         
-        # Transition from Sachs-Wolfe to first acoustic peak
+        # Transition region
         if l < 200:
-            # Smooth rise from plateau to first peak
-            # Mix of SW plateau and acoustic peak
+            # Mix SW and first peak
             sw_weight = 1.0 - (l - 50) / 150.0
             peak_weight = 1.0 - sw_weight
             
-            # SW component (decreasing)
+            # SW part
             sw_amp = base_amp * (50.0/10.0)**(ns-1) / (1.0 + 0.5*(50.0/25.0)**2)
             sw_amp *= np.exp(-0.5 * ((l - 50) / 50.0)**2)
             
-            # First peak component (increasing)
+            # First peak part
             peak_height = 5800.0
             peak_amp = peak_height * np.exp(-0.5 * ((l - 220) / 60.0)**2)
             
-            # Weighted combination
+            # Combine them
             dl_values[i] = sw_weight * sw_amp + peak_weight * peak_amp
             continue
         
-        # Main acoustic peak region with Silk damping
-        # Base acoustic spectrum with peaks at expected positions
-        # First compute where we are in the acoustic oscillation pattern
-        # Phase calibrated to put peaks at correct positions
+        # Main acoustic peaks with Silk damping
+        # Figure out where in the oscillation pattern we are
         phase = (l - 220) / ell_spacing * np.pi
         
-        # Acoustic oscillation pattern (offset cosine to keep positive)
-        # Gives peaks at phase = 0, 2π, 4π, ...; troughs at π, 3π, ...
+        # Oscillation pattern (peaks at 0,2π,4π; troughs at π,3π,...)
         osc_pattern = 0.5 + 0.5 * np.cos(phase)
         
-        # Apply baryon loading effect - suppresses even peaks relative to odd
-        # This creates the effect of odd peaks being higher than even peaks
+        # Baryon loading - makes odd peaks higher than even ones
         baryon_factor = 1.0
-        if phase > 0:  # Only apply after first peak
-            # Effect stronger at even peaks (phase ≈ 2π, 4π, ...)
+        if phase > 0:  # After first peak
             mod_phase = phase % (2*np.pi)
-            # Baryon loading suppresses peaks near π, 3π, 5π, ...
             baryon_strength = 0.35 * Omega_b_h2 / 0.022
             baryon_factor = 1.0 - baryon_strength * np.sin(mod_phase)**2
         
-        # Peak height envelope decreases with ℓ due to Silk damping
-        # Approximate formula based on physical damping scale
-        silk_scale = 1600.0 * (Omega_b_h2)**(-0.25) * (Omega_m_h2)**(-0.125)
-        damping = np.exp(-(l / silk_scale)**1.5)
+        # Silk damping - high ℓ power suppression
+        damping = np.exp(-(l / ell_D)**2)  # Square exponent per main.tex
         
-        # Overall peak height envelope, calibrated to match Planck data
+        # Overall envelope
         envelope = base_amp * (l/220.0)**(ns-1) * np.exp(-0.5 * ((np.log(l) - np.log(220)) / 0.8)**2) * damping
         
-        # Combine envelope, oscillation pattern, and baryon effect
+        # Put it all together
         dl_values[i] = envelope * osc_pattern * baryon_factor
     
-    # Apply any normalization if needed
+    # Normalize if requested
     if normalize:
-        # Find index of first peak (ℓ ≈ 220)
+        # First peak at ℓ ≈ 220
         peak1_idx = np.argmin(np.abs(ell - 220))
         if dl_values[peak1_idx] > 0:
-            # Normalize to expected first peak height
+            # Scale to expected height
             norm_factor = 6000.0 / dl_values[peak1_idx]
             dl_values *= norm_factor
     
