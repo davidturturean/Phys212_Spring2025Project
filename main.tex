@@ -99,6 +99,8 @@
 
 \maketitle
 
+\tableofcontents
+
 \newpage
 
 \section{Theory \& Background}
@@ -249,7 +251,7 @@ where $\sigma_T$ is the Thomson cross-section (physical constant), and $n_e(z)$ 
 
 The integral can be evaluated numerically using our six $\Lambda$CDM parameters without relying on previously calibrated coefficients. The result depends most strongly on $\Omega_b h^2$ and $\Omega_m h^2$.
 
-For computational efficiency in our MCMC implementation, we approximate this calculation with a scaling relation that captures the essential parameter dependencies, as motivated in ~\ref{sec:appendix_silk}:
+For computational efficiency in our MCMC implementation, we approximate this calculation with a scaling relation that captures the essential parameter dependencies, as motivated in Appendix~\ref{sec:appendix_silk}:
 
 \begin{equation}
 \ell_D \approx k_D d_A(z_*) \approx 1600 \left(\frac{\Omega_b h^2}{0.02237}\right)^{-0.25} \left(\frac{\Omega_m h^2}{0.1424}\right)^{-0.125}
@@ -304,7 +306,7 @@ To constrain cosmological parameters, we need to compare our theoretical model w
 
 This exact form reflects the fact that for each multipole $\ell$, we have $2\ell+1$ independent modes (corresponding to $m$ values from $-\ell$ to $\ell$), and the power spectrum estimator follows a $\chi^2$ distribution with $2\ell+1$ degrees of freedom. 
 
-For high multipoles ($\ell \gtrsim 30$), the number of modes becomes large, and by the central limit theorem, the log-likelihood summed over multipoles can be written as the following (see ~\ref{app:gaussian} for mathematical details):
+For high multipoles ($\ell \gtrsim 30$), the number of modes becomes large, and by the central limit theorem, the log-likelihood summed over multipoles can be written as the following (see Appendix~\ref{app:gaussian} for mathematical details):
 
 \begin{equation}
   -2\ln\mathcal{L}(\Theta)
@@ -674,7 +676,12 @@ Future work could extend this analysis to include additional datasets (e.g., BAO
 
 
 \appendix
-\renewcommand{\thesection}{Appendix \Alph{section}.}
+\renewcommand{\thesection}{\Alph{section}}
+\renewcommand{\thesubsection}{\Alph{section}.\arabic{subsection}}
+
+% Fix for TOC
+\addtocontents{toc}{\protect\setcounter{tocdepth}{1}}
+\addtocontents{toc}{\bigskip \textbf{Appendices}\par}
 
 \section{Derivation of the Silk Damping Scale}
 \label{sec:appendix_silk}
